@@ -54,10 +54,18 @@ public sealed class RadarSection(
     /// <summary>Debug property: model of the nearest camera in any direction.</summary>
     public const string DebugNearestModel = "Radar.Debug.NearestModel";
 
+    /// <summary>Debug property: <see cref="RadarCameraAhead"/> events since SimHub started, to spot double-fires.</summary>
+    public const string DebugAheadCount = "Radar.Debug.AheadCount";
+
+    /// <summary>Debug property: <see cref="RadarCameraPassed"/> events since SimHub started.</summary>
+    public const string DebugPassedCount = "Radar.Debug.PassedCount";
+
     private const double MetresPerMile = 1609.344;
 
     private readonly Dictionary<TruckGame, (CameraDatabase? Database, RadarDetector? Detector)> _byGame = [];
     private SpeedCamera? _alerting;
+    private int _aheadCount;
+    private int _passedCount;
 
     /// <inheritdoc />
     public void Register(ISectionHost host)
@@ -75,6 +83,8 @@ public sealed class RadarSection(
         host.AddProperty(DebugTruckZ, 0d);
         host.AddProperty(DebugNearestDistance, 0d);
         host.AddProperty(DebugNearestModel, "");
+        host.AddProperty(DebugAheadCount, 0);
+        host.AddProperty(DebugPassedCount, 0);
     }
 
     /// <summary>
@@ -95,11 +105,13 @@ public sealed class RadarSection(
         {
             if (_alerting is not null)
             {
+                _passedCount++;
                 output.TriggerEvent(RadarCameraPassed);
             }
 
             if (camera is not null)
             {
+                _aheadCount++;
                 output.TriggerEvent(RadarCameraAhead);
             }
 
@@ -121,6 +133,8 @@ public sealed class RadarSection(
         output.SetProperty(DebugTruckZ, telemetry.Truck.Position.Z);
         output.SetProperty(DebugNearestDistance, reading.NearestDistance);
         output.SetProperty(DebugNearestModel, reading.Nearest?.Model ?? "");
+        output.SetProperty(DebugAheadCount, _aheadCount);
+        output.SetProperty(DebugPassedCount, _passedCount);
     }
 
     /// <summary>

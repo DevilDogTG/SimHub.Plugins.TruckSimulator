@@ -1,0 +1,489 @@
+{
+  "$id": "1",
+  "Version": 2,
+  "Id": "6d9f3c1e-0b7a-4c2e-9a51-2f4d8e7b1a01",
+  "BaseHeight": 720,
+  "BaseWidth": 1280,
+  "BackgroundColor": "#FF101114",
+  "Screens": {
+    "$id": "2",
+    "$values": [
+      {
+        "$id": "3",
+        "_ExposedProperties": {
+          "$id": "4",
+          "Items": {
+            "$id": "5",
+            "$values": []
+          },
+          "Bindings": {
+            "$id": "6"
+          }
+        },
+        "IsFreezed": false,
+        "InGameScreen": true,
+        "IdleScreen": true,
+        "BackgroundColor": "#00FFFFFF",
+        "IsSelected": true,
+        "Items": {
+          "$id": "7",
+          "$values": [
+            {
+              "$type": "SimHub.Plugins.OutputPlugins.GraphicalDash.Models.TextItem, SimHub.Plugins",
+              "IsTextItem": true,
+              "Font": "Segoe UI",
+              "FontSize": 22.0,
+              "FontWeight": "Bold",
+              "Text": "DDTRUCK RADAR TEST",
+              "TextColor": "#FF8C8F96",
+              "HorizontalAlignment": 0,
+              "VerticalAlignment": 1,
+              "BackgroundColor": "#00FFFFFF",
+              "Height": 40.0,
+              "Left": 24.0,
+              "Top": 12.0,
+              "Visible": true,
+              "Width": 900.0,
+              "Name": "Text1"
+            },
+            {
+              "$type": "SimHub.Plugins.OutputPlugins.GraphicalDash.Models.RectangleItem, SimHub.Plugins",
+              "IsRectangleItem": true,
+              "BackgroundColor": "#FF22252B",
+              "Height": 250.0,
+              "Left": 20.0,
+              "Top": 60.0,
+              "Visible": true,
+              "Width": 1240.0,
+              "Name": "Rect2",
+              "Bindings": {
+                "BackgroundColor": {
+                  "Formula": {
+                    "Expression": "if([DDTruckPlugin.Radar.OverSpeed], '#FFE00000', if([DDTruckPlugin.Radar.CameraAhead], '#FF8A0000', '#FF22252B'))"
+                  },
+                  "Mode": 2,
+                  "TargetPropertyName": "BackgroundColor"
+                }
+              }
+            },
+            {
+              "$type": "SimHub.Plugins.OutputPlugins.GraphicalDash.Models.TextItem, SimHub.Plugins",
+              "IsTextItem": true,
+              "Font": "Segoe UI",
+              "FontSize": 72.0,
+              "FontWeight": "Bold",
+              "Text": "",
+              "TextColor": "#FFE6E6E6",
+              "HorizontalAlignment": 0,
+              "VerticalAlignment": 1,
+              "BackgroundColor": "#00FFFFFF",
+              "Height": 110.0,
+              "Left": 48.0,
+              "Top": 80.0,
+              "Visible": true,
+              "Width": 640.0,
+              "Name": "Text3",
+              "Bindings": {
+                "Text": {
+                  "Formula": {
+                    "Expression": "if([DDTruckPlugin.Radar.OverSpeed], 'SLOW DOWN', if([DDTruckPlugin.Radar.CameraAhead], 'CAMERA AHEAD', 'CLEAR'))"
+                  },
+                  "Mode": 2,
+                  "TargetPropertyName": "Text"
+                }
+              }
+            },
+            {
+              "$type": "SimHub.Plugins.OutputPlugins.GraphicalDash.Models.TextItem, SimHub.Plugins",
+              "IsTextItem": true,
+              "Font": "Segoe UI",
+              "FontSize": 80.0,
+              "FontWeight": "Bold",
+              "Text": "",
+              "TextColor": "#FFE6E6E6",
+              "HorizontalAlignment": 2,
+              "VerticalAlignment": 1,
+              "BackgroundColor": "#00FFFFFF",
+              "Height": 110.0,
+              "Left": 700.0,
+              "Top": 80.0,
+              "Visible": true,
+              "Width": 530.0,
+              "Name": "Text4",
+              "Bindings": {
+                "Text": {
+                  "Formula": {
+                    "Expression": "if([DDTruckPlugin.Radar.CameraAhead], if([DDTruckPlugin.Dashboard.DisplayUnitMetric], format([DDTruckPlugin.Radar.Distance],'0') + ' m', format([DDTruckPlugin.Radar.Distance],'0.00') + ' mi'), '-')"
+                  },
+                  "Mode": 2,
+                  "TargetPropertyName": "Text"
+                }
+              }
+            },
+            {
+              "$type": "SimHub.Plugins.OutputPlugins.GraphicalDash.Models.RectangleItem, SimHub.Plugins",
+              "IsRectangleItem": true,
+              "BackgroundColor": "#33FFFFFF",
+              "Height": 50.0,
+              "Left": 48.0,
+              "Top": 230.0,
+              "Visible": true,
+              "Width": 1184.0,
+              "Name": "Rect5"
+            },
+            {
+              "$type": "SimHub.Plugins.OutputPlugins.GraphicalDash.Models.RectangleItem, SimHub.Plugins",
+              "IsRectangleItem": true,
+              "BackgroundColor": "#FFFFFFFF",
+              "Height": 42.0,
+              "Left": 52.0,
+              "Top": 234.0,
+              "Visible": true,
+              "Width": 110.0,
+              "Name": "Rect6",
+              "Bindings": {
+                "Visible": {
+                  "Formula": {
+                    "Expression": "[DDTruckPlugin.Radar.CameraAhead] and [DDTruckPlugin.Radar.DistanceMeters] <= 350"
+                  },
+                  "Mode": 2,
+                  "TargetPropertyName": "Visible"
+                }
+              }
+            },
+            {
+              "$type": "SimHub.Plugins.OutputPlugins.GraphicalDash.Models.RectangleItem, SimHub.Plugins",
+              "IsRectangleItem": true,
+              "BackgroundColor": "#FFFFFFFF",
+              "Height": 42.0,
+              "Left": 170.0,
+              "Top": 234.0,
+              "Visible": true,
+              "Width": 110.0,
+              "Name": "Rect7",
+              "Bindings": {
+                "Visible": {
+                  "Formula": {
+                    "Expression": "[DDTruckPlugin.Radar.CameraAhead] and [DDTruckPlugin.Radar.DistanceMeters] <= 315"
+                  },
+                  "Mode": 2,
+                  "TargetPropertyName": "Visible"
+                }
+              }
+            },
+            {
+              "$type": "SimHub.Plugins.OutputPlugins.GraphicalDash.Models.RectangleItem, SimHub.Plugins",
+              "IsRectangleItem": true,
+              "BackgroundColor": "#FFFFFFFF",
+              "Height": 42.0,
+              "Left": 288.0,
+              "Top": 234.0,
+              "Visible": true,
+              "Width": 110.0,
+              "Name": "Rect8",
+              "Bindings": {
+                "Visible": {
+                  "Formula": {
+                    "Expression": "[DDTruckPlugin.Radar.CameraAhead] and [DDTruckPlugin.Radar.DistanceMeters] <= 280"
+                  },
+                  "Mode": 2,
+                  "TargetPropertyName": "Visible"
+                }
+              }
+            },
+            {
+              "$type": "SimHub.Plugins.OutputPlugins.GraphicalDash.Models.RectangleItem, SimHub.Plugins",
+              "IsRectangleItem": true,
+              "BackgroundColor": "#FFFFFFFF",
+              "Height": 42.0,
+              "Left": 406.0,
+              "Top": 234.0,
+              "Visible": true,
+              "Width": 110.0,
+              "Name": "Rect9",
+              "Bindings": {
+                "Visible": {
+                  "Formula": {
+                    "Expression": "[DDTruckPlugin.Radar.CameraAhead] and [DDTruckPlugin.Radar.DistanceMeters] <= 245"
+                  },
+                  "Mode": 2,
+                  "TargetPropertyName": "Visible"
+                }
+              }
+            },
+            {
+              "$type": "SimHub.Plugins.OutputPlugins.GraphicalDash.Models.RectangleItem, SimHub.Plugins",
+              "IsRectangleItem": true,
+              "BackgroundColor": "#FFFFFFFF",
+              "Height": 42.0,
+              "Left": 524.0,
+              "Top": 234.0,
+              "Visible": true,
+              "Width": 110.0,
+              "Name": "Rect10",
+              "Bindings": {
+                "Visible": {
+                  "Formula": {
+                    "Expression": "[DDTruckPlugin.Radar.CameraAhead] and [DDTruckPlugin.Radar.DistanceMeters] <= 210"
+                  },
+                  "Mode": 2,
+                  "TargetPropertyName": "Visible"
+                }
+              }
+            },
+            {
+              "$type": "SimHub.Plugins.OutputPlugins.GraphicalDash.Models.RectangleItem, SimHub.Plugins",
+              "IsRectangleItem": true,
+              "BackgroundColor": "#FFFFFFFF",
+              "Height": 42.0,
+              "Left": 642.0,
+              "Top": 234.0,
+              "Visible": true,
+              "Width": 110.0,
+              "Name": "Rect11",
+              "Bindings": {
+                "Visible": {
+                  "Formula": {
+                    "Expression": "[DDTruckPlugin.Radar.CameraAhead] and [DDTruckPlugin.Radar.DistanceMeters] <= 175"
+                  },
+                  "Mode": 2,
+                  "TargetPropertyName": "Visible"
+                }
+              }
+            },
+            {
+              "$type": "SimHub.Plugins.OutputPlugins.GraphicalDash.Models.RectangleItem, SimHub.Plugins",
+              "IsRectangleItem": true,
+              "BackgroundColor": "#FFFFFFFF",
+              "Height": 42.0,
+              "Left": 760.0,
+              "Top": 234.0,
+              "Visible": true,
+              "Width": 110.0,
+              "Name": "Rect12",
+              "Bindings": {
+                "Visible": {
+                  "Formula": {
+                    "Expression": "[DDTruckPlugin.Radar.CameraAhead] and [DDTruckPlugin.Radar.DistanceMeters] <= 140"
+                  },
+                  "Mode": 2,
+                  "TargetPropertyName": "Visible"
+                }
+              }
+            },
+            {
+              "$type": "SimHub.Plugins.OutputPlugins.GraphicalDash.Models.RectangleItem, SimHub.Plugins",
+              "IsRectangleItem": true,
+              "BackgroundColor": "#FFFFFFFF",
+              "Height": 42.0,
+              "Left": 878.0,
+              "Top": 234.0,
+              "Visible": true,
+              "Width": 110.0,
+              "Name": "Rect13",
+              "Bindings": {
+                "Visible": {
+                  "Formula": {
+                    "Expression": "[DDTruckPlugin.Radar.CameraAhead] and [DDTruckPlugin.Radar.DistanceMeters] <= 105"
+                  },
+                  "Mode": 2,
+                  "TargetPropertyName": "Visible"
+                }
+              }
+            },
+            {
+              "$type": "SimHub.Plugins.OutputPlugins.GraphicalDash.Models.RectangleItem, SimHub.Plugins",
+              "IsRectangleItem": true,
+              "BackgroundColor": "#FFFFFFFF",
+              "Height": 42.0,
+              "Left": 996.0,
+              "Top": 234.0,
+              "Visible": true,
+              "Width": 110.0,
+              "Name": "Rect14",
+              "Bindings": {
+                "Visible": {
+                  "Formula": {
+                    "Expression": "[DDTruckPlugin.Radar.CameraAhead] and [DDTruckPlugin.Radar.DistanceMeters] <= 70"
+                  },
+                  "Mode": 2,
+                  "TargetPropertyName": "Visible"
+                }
+              }
+            },
+            {
+              "$type": "SimHub.Plugins.OutputPlugins.GraphicalDash.Models.RectangleItem, SimHub.Plugins",
+              "IsRectangleItem": true,
+              "BackgroundColor": "#FFFFFFFF",
+              "Height": 42.0,
+              "Left": 1114.0,
+              "Top": 234.0,
+              "Visible": true,
+              "Width": 110.0,
+              "Name": "Rect15",
+              "Bindings": {
+                "Visible": {
+                  "Formula": {
+                    "Expression": "[DDTruckPlugin.Radar.CameraAhead] and [DDTruckPlugin.Radar.DistanceMeters] <= 35"
+                  },
+                  "Mode": 2,
+                  "TargetPropertyName": "Visible"
+                }
+              }
+            },
+            {
+              "$type": "SimHub.Plugins.OutputPlugins.GraphicalDash.Models.TextItem, SimHub.Plugins",
+              "IsTextItem": true,
+              "Font": "Segoe UI",
+              "FontSize": 30.0,
+              "FontWeight": "Normal",
+              "Text": "",
+              "TextColor": "#FFE6E6E6",
+              "HorizontalAlignment": 0,
+              "VerticalAlignment": 1,
+              "BackgroundColor": "#00FFFFFF",
+              "Height": 50.0,
+              "Left": 24.0,
+              "Top": 330.0,
+              "Visible": true,
+              "Width": 760.0,
+              "Name": "Text16",
+              "Bindings": {
+                "Text": {
+                  "Formula": {
+                    "Expression": "'Camera: ' + if([DDTruckPlugin.Radar.CameraAhead], [DDTruckPlugin.Radar.CameraModel], '-')"
+                  },
+                  "Mode": 2,
+                  "TargetPropertyName": "Text"
+                }
+              }
+            },
+            {
+              "$type": "SimHub.Plugins.OutputPlugins.GraphicalDash.Models.TextItem, SimHub.Plugins",
+              "IsTextItem": true,
+              "Font": "Segoe UI",
+              "FontSize": 30.0,
+              "FontWeight": "Normal",
+              "Text": "",
+              "TextColor": "#FFE6E6E6",
+              "HorizontalAlignment": 2,
+              "VerticalAlignment": 1,
+              "BackgroundColor": "#00FFFFFF",
+              "Height": 50.0,
+              "Left": 700.0,
+              "Top": 330.0,
+              "Visible": true,
+              "Width": 560.0,
+              "Name": "Text17",
+              "Bindings": {
+                "Text": {
+                  "Formula": {
+                    "Expression": "'Speed ' + format([DataCorePlugin.GameData.NewData.SpeedKmh],'0') + ' / Limit ' + format([DataCorePlugin.GameRawData.NavigationValues.SpeedLimit.Kph],'0') + ' km/h'"
+                  },
+                  "Mode": 2,
+                  "TargetPropertyName": "Text"
+                }
+              }
+            },
+            {
+              "$type": "SimHub.Plugins.OutputPlugins.GraphicalDash.Models.RectangleItem, SimHub.Plugins",
+              "IsRectangleItem": true,
+              "BackgroundColor": "#FF1A1C20",
+              "Height": 140.0,
+              "Left": 20.0,
+              "Top": 560.0,
+              "Visible": true,
+              "Width": 1240.0,
+              "Name": "Rect18"
+            },
+            {
+              "$type": "SimHub.Plugins.OutputPlugins.GraphicalDash.Models.TextItem, SimHub.Plugins",
+              "IsTextItem": true,
+              "Font": "Consolas",
+              "FontSize": 22.0,
+              "FontWeight": "Bold",
+              "Text": "DEBUG",
+              "TextColor": "#FF8C8F96",
+              "HorizontalAlignment": 0,
+              "VerticalAlignment": 1,
+              "BackgroundColor": "#00FFFFFF",
+              "Height": 36.0,
+              "Left": 36.0,
+              "Top": 572.0,
+              "Visible": true,
+              "Width": 1210.0,
+              "Name": "Text19"
+            },
+            {
+              "$type": "SimHub.Plugins.OutputPlugins.GraphicalDash.Models.TextItem, SimHub.Plugins",
+              "IsTextItem": true,
+              "Font": "Consolas",
+              "FontSize": 24.0,
+              "FontWeight": "Normal",
+              "Text": "",
+              "TextColor": "#FFE6E6E6",
+              "HorizontalAlignment": 0,
+              "VerticalAlignment": 1,
+              "BackgroundColor": "#00FFFFFF",
+              "Height": 36.0,
+              "Left": 36.0,
+              "Top": 610.0,
+              "Visible": true,
+              "Width": 1210.0,
+              "Name": "Text20",
+              "Bindings": {
+                "Text": {
+                  "Formula": {
+                    "Expression": "'DB ' + format([DDTruckPlugin.Radar.Debug.CamerasLoaded],'0') + ' (ets2 ' + [DDTruckPlugin.Radar.Debug.GameVersion] + ')   X ' + format([DDTruckPlugin.Radar.Debug.TruckX],'0.0') + '   Z ' + format([DDTruckPlugin.Radar.Debug.TruckZ],'0.0')"
+                  },
+                  "Mode": 2,
+                  "TargetPropertyName": "Text"
+                }
+              }
+            },
+            {
+              "$type": "SimHub.Plugins.OutputPlugins.GraphicalDash.Models.TextItem, SimHub.Plugins",
+              "IsTextItem": true,
+              "Font": "Consolas",
+              "FontSize": 24.0,
+              "FontWeight": "Normal",
+              "Text": "",
+              "TextColor": "#FFE6E6E6",
+              "HorizontalAlignment": 0,
+              "VerticalAlignment": 1,
+              "BackgroundColor": "#00FFFFFF",
+              "Height": 36.0,
+              "Left": 36.0,
+              "Top": 648.0,
+              "Visible": true,
+              "Width": 1210.0,
+              "Name": "Text21",
+              "Bindings": {
+                "Text": {
+                  "Formula": {
+                    "Expression": "'Nearest (any dir): ' + format([DDTruckPlugin.Radar.Debug.NearestDistance],'0') + ' m ' + [DDTruckPlugin.Radar.Debug.NearestModel] + '   Events: ahead ' + format([DDTruckPlugin.Radar.Debug.AheadCount],'0') + ' / passed ' + format([DDTruckPlugin.Radar.Debug.PassedCount],'0')"
+                  },
+                  "Mode": 2,
+                  "TargetPropertyName": "Text"
+                }
+              }
+            }
+          ]
+        },
+        "RenderingSkip": 0,
+        "Id": "3b0c6f2a-5e8d-4f1b-8c7a-9d2e1f4a6b02",
+        "Name": "Radar",
+        "Bindings": {
+          "$id": "8"
+        }
+      }
+    ]
+  },
+  "SelectedScreen": {
+    "$ref": "3"
+  },
+  "Images": {
+    "$id": "9",
+    "$values": []
+  }
+}

@@ -5,8 +5,9 @@
 
 .DESCRIPTION
     Copies the Release build of the plugin assemblies and their .pdb files (so errors in SimHub's
-    log carry line numbers) into the SimHub folder. Refuses to run while SimHub is open, because
-    SimHub locks loaded plugin assemblies.
+    log carry line numbers) into the SimHub folder, and the example dashboards in examples/dashboards
+    into SimHub's DashTemplates. Refuses to run while SimHub is open, because SimHub locks loaded
+    plugin assemblies.
 
 .PARAMETER SimHubPath
     SimHub install folder. Defaults to the folder SimHub records in the registry.
@@ -51,6 +52,20 @@ foreach ($file in $files) {
             File        = $file
             Destination = $SimHubPath
             Size        = (Get-Item -LiteralPath $source).Length
+        }
+    }
+}
+
+$dashboards = Join-Path $repoRoot 'examples/dashboards'
+foreach ($dashboard in Get-ChildItem -LiteralPath $dashboards -Directory -ErrorAction SilentlyContinue) {
+    $target = Join-Path $SimHubPath "DashTemplates/$($dashboard.Name)"
+    if ($PSCmdlet.ShouldProcess($target, 'Copy dashboard')) {
+        New-Item -ItemType Directory -Path $target -Force | Out-Null
+        Copy-Item -Path (Join-Path $dashboard.FullName '*') -Destination $target -Force
+        [PSCustomObject]@{
+            File        = $dashboard.Name
+            Destination = $target
+            Size        = (Get-ChildItem -LiteralPath $dashboard.FullName -File | Measure-Object -Property Length -Sum).Sum
         }
     }
 }

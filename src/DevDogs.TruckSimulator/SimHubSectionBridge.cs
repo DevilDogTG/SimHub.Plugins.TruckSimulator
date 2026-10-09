@@ -27,7 +27,7 @@ internal sealed class SimHubSectionBridge(
     public void AddAction(
         string name,
         Action<ISectionOutput> body) =>
-        pluginManager.AddAction(name, pluginType, (_, _) => body(this), (_, _) => { });
+        pluginManager.AddAction(name, pluginType, (_, _) => Run(name, body), (_, _) => { });
 
     /// <inheritdoc />
     public void SetProperty(
@@ -36,4 +36,24 @@ internal sealed class SimHubSectionBridge(
 
     /// <inheritdoc />
     public void TriggerEvent(string name) => pluginManager.TriggerEvent(name, pluginType);
+
+    /// <summary>
+    /// Runs an action, logging instead of throwing: actions fire from SimHub's input handling,
+    /// where an exception would surface to SimHub rather than to this plugin.
+    /// </summary>
+    /// <param name="name">The action name, for the log.</param>
+    /// <param name="body">The action.</param>
+    private void Run(
+        string name,
+        Action<ISectionOutput> body)
+    {
+        try
+        {
+            body(this);
+        }
+        catch (Exception ex)
+        {
+            SimHub.Logging.Current.Error($"DevDogs.TruckSimulator: action {name} failed", ex);
+        }
+    }
 }

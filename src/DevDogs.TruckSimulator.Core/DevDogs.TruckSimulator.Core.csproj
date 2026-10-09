@@ -6,6 +6,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- Provided at runtime by SimHub (see Directory.Packages.props); not copied to the output. -->
+    <PackageReference Include="Newtonsoft.Json" PrivateAssets="all" ExcludeAssets="runtime" />
+  </ItemGroup>
+
+  <ItemGroup>
     <InternalsVisibleTo Include="DevDogs.TruckSimulator.Core.Tests" />
   </ItemGroup>
 </Project>

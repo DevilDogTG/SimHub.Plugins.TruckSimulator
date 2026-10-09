@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Game-agnostic logic with no SimHub dependency, so it is testable on any runtime. -->
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <RootNamespace>DevDogs.TruckSimulator.Core</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="DevDogs.TruckSimulator.Core.Tests" />
+  </ItemGroup>
+</Project>

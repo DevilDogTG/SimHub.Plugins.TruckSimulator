@@ -4,6 +4,7 @@ using System.IO;
 using System.Reflection;
 using System.Windows.Controls;
 using DevDogs.TruckSimulator.Core;
+using DevDogs.TruckSimulator.Core.Diagnostics;
 using DevDogs.TruckSimulator.Core.Localisation;
 using DevDogs.TruckSimulator.Core.Recording;
 using DevDogs.TruckSimulator.Core.Sections;
@@ -27,6 +28,7 @@ public class DDTruckPlugin : IPlugin, IDataPlugin, IWPFSettings
     private const string SettingsKey = "DDTruckPluginSettings";
 
     private readonly HashSet<string> _failingSections = [];
+    private readonly LiveTelemetryMonitor _monitor = new();
 
     private SimHubSectionBridge _bridge = null!; // assigned in Init, which SimHub calls before any other member
     private DashboardSection _dashboard = null!; // assigned in Init
@@ -51,7 +53,7 @@ public class DDTruckPlugin : IPlugin, IDataPlugin, IWPFSettings
     public void Init(PluginManager pluginManager)
     {
         Settings = this.ReadCommonSettings(SettingsKey, () => new PluginSettings());
-        _bridge = new SimHubSectionBridge(pluginManager, GetType());
+        _bridge = new SimHubSectionBridge(pluginManager, GetType(), _monitor);
 
         _dashboard = new DashboardSection(Settings);
 
@@ -92,7 +94,13 @@ public class DDTruckPlugin : IPlugin, IDataPlugin, IWPFSettings
     {
         _dashboard.Update(_bridge);
 
-        if (!TelemetryReader.TryRead(ref data, out var telemetry) || telemetry is null)
+        var hasTelemetry = TelemetryReader.TryRead(ref data, out var telemetry);
+        if (_monitor.Enabled)
+        {
+            _monitor.OnUpdate(new LiveStatus(data.GameName ?? "", data.GameRunning, data.GamePaused, hasTelemetry), telemetry);
+        }
+
+        if (!hasTelemetry || telemetry is null)
         {
             return;
         }
@@ -111,6 +119,7 @@ public class DDTruckPlugin : IPlugin, IDataPlugin, IWPFSettings
                 if (_failingSections.Add(section.GetType().Name))
                 {
                     SimHub.Logging.Current.Error($"DevDogs.TruckSimulator: {section.GetType().Name} failed", ex);
+                    _monitor.OnSectionFailed(section.GetType().Name);
                 }
             }
         }
@@ -131,7 +140,14 @@ public class DDTruckPlugin : IPlugin, IDataPlugin, IWPFSettings
     /// </summary>
     /// <param name="pluginManager">The SimHub plugin manager.</param>
     /// <returns>The settings control.</returns>
-    public Control GetWPFSettingsControl(PluginManager pluginManager) => new SettingsControl(Settings, _recording, _recordingsFolder, InformationalVersion);
+    public Control GetWPFSettingsControl(PluginManager pluginManager) => 
+        new SettingsControl(new SettingsPageModel(
+            Settings,
+            _recording,
+            _recordingsFolder,
+            _monitor,
+            GetType().Name + ".",
+            InformationalVersion));
 
     /// <summary>
     /// Gets the version including any pre-release suffix, for example <c>0.1.0-dev.1</c>.

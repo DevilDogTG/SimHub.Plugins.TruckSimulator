@@ -1,4 +1,5 @@
 using System;
+using DevDogs.TruckSimulator.Core.Diagnostics;
 using DevDogs.TruckSimulator.Core.Sections;
 using SimHub.Plugins;
 
@@ -10,9 +11,11 @@ namespace DevDogs.TruckSimulator;
 /// </summary>
 /// <param name="pluginManager">The SimHub plugin manager.</param>
 /// <param name="pluginType">The plugin type that owns the properties, events and actions.</param>
+/// <param name="monitor">Sees every published value and event, for the live telemetry tab.</param>
 internal sealed class SimHubSectionBridge(
     PluginManager pluginManager,
-    Type pluginType) : ISectionHost, ISectionOutput
+    Type pluginType,
+    LiveTelemetryMonitor monitor) : ISectionHost, ISectionOutput
 {
     /// <inheritdoc />
     public void AddProperty<T>(
@@ -32,10 +35,18 @@ internal sealed class SimHubSectionBridge(
     /// <inheritdoc />
     public void SetProperty(
         string name,
-        object value) => pluginManager.SetPropertyValue(name, pluginType, value);
+        object value)
+    {
+        pluginManager.SetPropertyValue(name, pluginType, value);
+        monitor.OnProperty(name, value);
+    }
 
     /// <inheritdoc />
-    public void TriggerEvent(string name) => pluginManager.TriggerEvent(name, pluginType);
+    public void TriggerEvent(string name)
+    {
+        pluginManager.TriggerEvent(name, pluginType);
+        monitor.OnEvent(name, DateTime.UtcNow);
+    }
 
     /// <summary>
     /// Runs an action, logging instead of throwing: actions fire from SimHub's input handling,

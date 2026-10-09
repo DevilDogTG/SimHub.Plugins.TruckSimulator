@@ -7,6 +7,7 @@ using System.Windows.Media;
 using DevDogs.TruckSimulator.Core;
 using DevDogs.TruckSimulator.Core.Diagnostics;
 using DevDogs.TruckSimulator.Core.Localisation;
+using DevDogs.TruckSimulator.Core.Radar;
 using DevDogs.TruckSimulator.Core.Recording;
 using DevDogs.TruckSimulator.Core.Sections;
 using DevDogs.TruckSimulator.Telemetry;
@@ -88,6 +89,7 @@ public class DDTruckPlugin : IPlugin, IDataPlugin, IWPFSettingsV2
             new LightsSection(),
             new LocalisationSection(EmptyCityNameSource.Instance),
             new NavigationSection(),
+            new RadarSection(Settings, CameraDatabase.LoadEmbedded),
             _recording,
         ];
 

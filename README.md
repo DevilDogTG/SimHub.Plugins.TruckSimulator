@@ -33,6 +33,21 @@ the documented behaviour of the original, and the author of the original will be
 - .NET 10 SDK to build. SimHub runs on .NET Framework 4.8, so the plugin assembly targets `net48`;
   see [docs/adr](docs/adr) for why.
 
+## Install
+
+Download `DevDogs.TruckSimulator-<version>.zip`, close SimHub, extract the zip into the SimHub folder
+(next to `SimHubWPF.exe`) and start SimHub. Enable "DevDogs Truck Simulator" when SimHub asks.
+Properties appear under `DDTruckPlugin.*`.
+
+## Build
+
+```powershell
+dotnet build -c Release                 # needs SimHub installed; override with -p:SimHubPath=<folder>
+dotnet test -c Release
+./build/Install-DevBuild.ps1            # copy the build into SimHub (SimHub must be closed)
+./build/New-ReleasePackage.ps1          # build, test and write artifacts/DevDogs.TruckSimulator-<version>.zip
+```
+
 ## License
 
 [MIT](LICENSE) © DevDogs

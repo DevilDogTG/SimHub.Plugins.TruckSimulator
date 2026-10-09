@@ -16,6 +16,7 @@
     <Reference Include="SimHub.Plugins" HintPath="$(SimHubPath)\SimHub.Plugins.dll" Private="false" />
     <Reference Include="GameReaderCommon" HintPath="$(SimHubPath)\GameReaderCommon.dll" Private="false" />
     <Reference Include="SimHub.Logging" HintPath="$(SimHubPath)\SimHub.Logging.dll" Private="false" />
+    <Reference Include="ETS2Reader" HintPath="$(SimHubPath)\ETS2Reader.dll" Private="false" />
   </ItemGroup>
 
   <Target Name="EnsureSimHubInstalled" BeforeTargets="ResolveAssemblyReferences">

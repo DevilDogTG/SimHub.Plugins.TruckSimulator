@@ -17,4 +17,10 @@ public sealed class PluginSettings
 
     /// <summary>Gets or sets the language code used for city and country names, for example <c>en_gb</c>.</summary>
     public string LocalisationLanguage { get; set; } = "en_gb";
+
+    /// <summary>Gets or sets the distance, in metres, at which a speed camera ahead starts a radar alert.</summary>
+    public int RadarAlertDistance { get; set; } = 350;
+
+    /// <summary>Gets or sets the half-angle, in degrees, of the cone ahead of the truck the radar watches.</summary>
+    public int RadarConeAngle { get; set; } = 25;
 }

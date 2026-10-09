@@ -24,6 +24,8 @@ public class TelemetryRecordingTests
             SpeedMph = 61.5f,
             FuelAverageConsumption = 0.42f,
             FuelRange = 812f,
+            Position = new WorldPosition { X = 10843.8125, Y = 32.5, Z = -8924.0625 },
+            Heading = 0.375f,
             BlinkerLeftOn = true,
             Damage = new TruckDamage { Cabin = 0.01f, WheelsAverage = 0.03f },
         },

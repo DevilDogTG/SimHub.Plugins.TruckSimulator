@@ -54,6 +54,14 @@ public sealed record TruckState
     /// <summary>Gets the estimated fuel range in kilometres; 0 when the game has no value yet.</summary>
     public float FuelRange { get; init; }
 
+    /// <summary>Gets the truck's position in the game world, in metres.</summary>
+    public WorldPosition Position { get; init; } = new();
+
+    /// <summary>
+    /// Gets the truck's heading as a fraction of a full turn (0..1), as the SCS SDK reports it.
+    /// </summary>
+    public float Heading { get; init; }
+
     /// <summary>Gets a value indicating whether the left blinker is on.</summary>
     public bool BlinkerLeftOn { get; init; }
 
@@ -62,6 +70,21 @@ public sealed record TruckState
 
     /// <summary>Gets the wear of the truck's parts.</summary>
     public TruckDamage Damage { get; init; } = new();
+}
+
+/// <summary>
+/// A point in the game world, in metres. X and Z are the ground plane; Y is height.
+/// </summary>
+public sealed record WorldPosition
+{
+    /// <summary>Gets the X coordinate.</summary>
+    public double X { get; init; }
+
+    /// <summary>Gets the Y coordinate (height).</summary>
+    public double Y { get; init; }
+
+    /// <summary>Gets the Z coordinate.</summary>
+    public double Z { get; init; }
 }
 
 /// <summary>

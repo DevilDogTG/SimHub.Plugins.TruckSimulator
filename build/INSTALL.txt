@@ -1,0 +1,26 @@
+DevDogs.TruckSimulator - SimHub plugin for ETS2 and ATS
+=======================================================
+
+Install
+-------
+1. Close SimHub.
+2. Extract everything in this zip into your SimHub folder, next to SimHubWPF.exe
+   (usually C:\Program Files (x86)\SimHub).
+3. Start SimHub. When it asks whether to enable "DevDogs Truck Simulator", choose yes.
+
+Properties appear in SimHub under DDTruckPlugin.*, for example DDTruckPlugin.Job.Status.
+
+Uninstall
+---------
+Close SimHub and delete these files from the SimHub folder:
+  DevDogs.TruckSimulator.dll
+  DevDogs.TruckSimulator.Core.dll
+  DevDogs.TruckSimulator.INSTALL.txt
+  DevDogs.TruckSimulator.LICENSE.txt
+
+Coming from sjdawson's TruckSimulatorPlugin
+-------------------------------------------
+Both plugins can be installed together. To move a dashboard over, replace the
+"TruckSimulatorPlugin." prefix with "DDTruckPlugin." in its bindings.
+
+Project: https://github.com/DevilDogTG/SimHub.Plugins.TruckSimulator

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using DevDogs.TruckSimulator.Core.Telemetry;
 using ETS2Reader;
 using GameReaderCommon;
@@ -13,6 +14,48 @@ namespace DevDogs.TruckSimulator.Telemetry;
 /// </summary>
 internal static class TelemetryReader
 {
+    /// <summary>
+    /// Gets the SimHub property each snapshot field is read from, keyed by the field's path as
+    /// <c>SnapshotFields</c> lists it. Shown on the live telemetry tab so a value can be compared
+    /// with SimHub's own. Keep in step with <see cref="Map"/>.
+    /// </summary>
+    public static IReadOnlyDictionary<string, string> Sources { get; } = new Dictionary<string, string>(StringComparer.Ordinal)
+    {
+        ["Game"] = "DataCorePlugin.GameName",
+        ["Truck.Id"] = "GameRawData.TruckValues.ConstantsValues.Id",
+        ["Truck.EngineRpm"] = "DataCorePlugin.GameData.Rpms",
+        ["Truck.EngineEnabled"] = "GameRawData.Drivetrain.EngineEnabled",
+        ["Truck.GearDashboard"] = "GameRawData.TruckValues.CurrentValues.DashboardValues.GearDashboards",
+        ["Truck.ForwardGearCount"] = "GameRawData.TruckValues.ConstantsValues.MotorValues.ForwardGearCount",
+        ["Truck.SpeedMph"] = "GameRawData.Drivetrain.SpeedMph",
+        ["Truck.FuelAverageConsumption"] = "GameRawData.TruckValues.CurrentValues.DashboardValues.FuelValue.AverageConsumption",
+        ["Truck.FuelRange"] = "GameRawData.TruckValues.CurrentValues.DashboardValues.FuelValue.Range",
+        ["Truck.Position.X"] = "GameRawData.TruckValues.CurrentValues.PositionValue.Position.X",
+        ["Truck.Position.Y"] = "GameRawData.TruckValues.CurrentValues.PositionValue.Position.Y",
+        ["Truck.Position.Z"] = "GameRawData.TruckValues.CurrentValues.PositionValue.Position.Z",
+        ["Truck.Heading"] = "GameRawData.TruckValues.CurrentValues.PositionValue.Orientation.Heading",
+        ["Truck.BlinkerLeftOn"] = "GameRawData.TruckValues.CurrentValues.LightsValues.BlinkerLeftOn",
+        ["Truck.BlinkerRightOn"] = "GameRawData.TruckValues.CurrentValues.LightsValues.BlinkerRightOn",
+        ["Truck.Damage.Cabin"] = "GameRawData.TruckValues.CurrentValues.DamageValues.Cabin",
+        ["Truck.Damage.Chassis"] = "GameRawData.TruckValues.CurrentValues.DamageValues.Chassis",
+        ["Truck.Damage.Engine"] = "GameRawData.TruckValues.CurrentValues.DamageValues.Engine",
+        ["Truck.Damage.Transmission"] = "GameRawData.TruckValues.CurrentValues.DamageValues.Transmission",
+        ["Truck.Damage.WheelsAverage"] = "GameRawData.TruckValues.CurrentValues.DamageValues.WheelsAvg",
+        ["Job.CargoId"] = "GameRawData.JobValues.CargoValues.Id",
+        ["Job.CompanySourceId"] = "GameRawData.JobValues.CompanySourceId",
+        ["Job.CitySourceId"] = "GameRawData.JobValues.CitySourceId",
+        ["Job.CitySource"] = "GameRawData.JobValues.CitySource",
+        ["Job.CompanyDestinationId"] = "GameRawData.JobValues.CompanyDestinationId",
+        ["Job.CityDestinationId"] = "GameRawData.JobValues.CityDestinationId",
+        ["Job.CityDestination"] = "GameRawData.JobValues.CityDestination",
+        ["Job.RemainingDeliveryTime"] = "GameRawData.JobValues.RemainingDeliveryTime.Time",
+        ["Job.OnJob"] = "GameRawData.SpecialEventsValues.OnJob",
+        ["Navigation.Distance"] = "GameRawData.NavigationValues.NavigationDistance",
+        ["Navigation.Time"] = "GameRawData.NavigationValues.NavigationTime",
+        ["Navigation.SpeedLimitMph"] = "GameRawData.Job.SpeedLimitMph",
+        ["NextRestStop"] = "GameRawData.CommonValues.NextRestStop.Time",
+    };
+
     /// <summary>
     /// Reads the current snapshot when a supported game is running and has data.
     /// </summary>

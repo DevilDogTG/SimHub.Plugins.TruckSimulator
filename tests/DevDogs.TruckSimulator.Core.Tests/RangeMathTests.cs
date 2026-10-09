@@ -37,14 +37,15 @@ public class RangeMathTests
     }
 
     [Theory]
-    [InlineData(50f, 50f)]
-    [InlineData(60f, 50f)]
-    public void FractionOfRange_EmptyOrInvertedRange_ReturnsZero(
-        float min,
-        float max)
+    [InlineData(49f, 0f)]
+    [InlineData(50f, 0f)]
+    [InlineData(51f, 1f)]
+    public void FractionOfRange_EmptyRange_StepsFromZeroToOne(
+        float input,
+        float expected)
     {
-        var result = RangeMath.FractionOfRange(55f, min, max);
+        var result = RangeMath.FractionOfRange(input, 50f, 50f);
 
-        result.Should().Be(0f);
+        result.Should().Be(expected);
     }
 }

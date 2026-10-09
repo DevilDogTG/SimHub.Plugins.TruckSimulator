@@ -58,6 +58,7 @@ internal static class TelemetryReader
         var current = sdk.TruckValues?.CurrentValues;
         var dashboard = current?.DashboardValues;
         var lights = current?.LightsValues;
+        var placement = current?.PositionValue;
         var damage = current?.DamageValues;
         var job = sdk.JobValues;
         var navigation = sdk.NavigationValues;
@@ -76,6 +77,13 @@ internal static class TelemetryReader
                 SpeedMph = legacy?.Drivetrain?.SpeedMph ?? 0f,
                 FuelAverageConsumption = dashboard?.FuelValue?.AverageConsumption ?? 0f,
                 FuelRange = dashboard?.FuelValue?.Range ?? 0f,
+                Position = new WorldPosition
+                {
+                    X = placement?.Position?.X ?? 0d,
+                    Y = placement?.Position?.Y ?? 0d,
+                    Z = placement?.Position?.Z ?? 0d,
+                },
+                Heading = placement?.Orientation?.Heading ?? 0f,
                 BlinkerLeftOn = lights?.BlinkerLeftOn ?? false,
                 BlinkerRightOn = lights?.BlinkerRightOn ?? false,
                 Damage = new TruckDamage

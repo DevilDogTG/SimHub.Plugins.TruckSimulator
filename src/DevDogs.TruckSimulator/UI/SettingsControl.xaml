@@ -23,6 +23,9 @@
                 <RowDefinition Height="40" />
                 <RowDefinition Height="40" />
                 <RowDefinition Height="40" />
+                <RowDefinition Height="48" />
+                <RowDefinition Height="40" />
+                <RowDefinition Height="40" />
               </Grid.RowDefinitions>
 
               <TextBlock Grid.Row="0" VerticalAlignment="Center" Text="Over speed margin (mph)"
@@ -44,6 +47,25 @@
               <TextBlock Grid.Row="2" VerticalAlignment="Center" Text="Display dash units in metric" />
               <CheckBox Grid.Row="2" Grid.Column="1" VerticalAlignment="Center"
                         IsChecked="{Binding Settings.DashUnitMetric, Mode=TwoWay}" />
+
+              <TextBlock Grid.Row="3" Grid.ColumnSpan="3" VerticalAlignment="Bottom" Margin="0,0,0,6"
+                         Text="SPEED-CAMERA RADAR (ETS2)" FontWeight="Bold" />
+
+              <TextBlock Grid.Row="4" VerticalAlignment="Center" Text="Alert distance (m)"
+                         ToolTip="How far ahead a speed camera starts Radar.CameraAhead. The alert holds for 50 m more." />
+              <Slider Grid.Row="4" Grid.Column="1" VerticalAlignment="Center" Minimum="100" Maximum="1000"
+                      IsSnapToTickEnabled="True" TickFrequency="10"
+                      Value="{Binding Settings.RadarAlertDistance, Mode=TwoWay}" />
+              <TextBlock Grid.Row="4" Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Right"
+                         Text="{Binding Settings.RadarAlertDistance}" />
+
+              <TextBlock Grid.Row="5" VerticalAlignment="Center" Text="Cone angle (degrees)"
+                         ToolTip="How far to either side of the travel direction a camera still counts as ahead. Wider catches bends but also parallel roads." />
+              <Slider Grid.Row="5" Grid.Column="1" VerticalAlignment="Center" Minimum="5" Maximum="60"
+                      IsSnapToTickEnabled="True" TickFrequency="1"
+                      Value="{Binding Settings.RadarConeAngle, Mode=TwoWay}" />
+              <TextBlock Grid.Row="5" Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Right"
+                         Text="{Binding Settings.RadarConeAngle}" />
             </Grid>
 
             <TextBlock Margin="0,16,0,0" TextWrapping="Wrap" Opacity="0.7"

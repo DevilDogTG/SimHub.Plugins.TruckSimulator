@@ -17,9 +17,10 @@ internal sealed class FakeSectionHost : ISectionHost, ISectionOutput
 
     public List<string> TriggeredEvents { get; } = [];
 
-    public void AddProperty(
+    public void AddProperty<T>(
         string name,
-        object defaultValue) => Defaults[name] = defaultValue;
+        T defaultValue)
+        where T : notnull => Defaults[name] = defaultValue;
 
     public void AddEvent(string name) => DeclaredEvents.Add(name);
 

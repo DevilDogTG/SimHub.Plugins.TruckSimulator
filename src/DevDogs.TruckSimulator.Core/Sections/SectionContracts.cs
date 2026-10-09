@@ -10,13 +10,16 @@ namespace DevDogs.TruckSimulator.Core.Sections;
 public interface ISectionHost
 {
     /// <summary>
-    /// Declares a property and its value before the first update.
+    /// Declares a property and its value before the first update. SimHub records the property's
+    /// type from <typeparamref name="T"/>, so pass a value of the type the property will hold.
     /// </summary>
+    /// <typeparam name="T">The property's value type.</typeparam>
     /// <param name="name">The property name.</param>
     /// <param name="defaultValue">The value shown until the first update.</param>
-    void AddProperty(
+    void AddProperty<T>(
         string name,
-        object defaultValue);
+        T defaultValue)
+        where T : notnull;
 
     /// <summary>
     /// Declares an event that the section may trigger.

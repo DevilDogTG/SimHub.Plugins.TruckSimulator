@@ -5,6 +5,12 @@
   <ItemGroup>
     <!-- Polyfills so modern C# features (init, records, required, ...) compile for net48/netstandard2.0. -->
     <PackageVersion Include="PolySharp" Version="1.16.0" />
+    <!--
+      Compile-time only in shipped assemblies: SimHub ships Newtonsoft.Json 13.0.4 and every 13.x
+      release has assembly version 13.0.0.0, so the plugin binds to SimHub's copy. Keep at or below
+      the version SimHub ships and never copy it into the package.
+    -->
+    <PackageVersion Include="Newtonsoft.Json" Version="13.0.3" />
 
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.10.1" />
     <PackageVersion Include="xunit.v3" Version="3.2.2" />

@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Reflection;
 using System.Windows.Controls;
 using DevDogs.TruckSimulator.Core;
 using DevDogs.TruckSimulator.Core.Localisation;
+using DevDogs.TruckSimulator.Core.Recording;
 using DevDogs.TruckSimulator.Core.Sections;
 using DevDogs.TruckSimulator.Telemetry;
 using DevDogs.TruckSimulator.UI;
@@ -28,6 +30,8 @@ public class DDTruckPlugin : IPlugin, IDataPlugin, IWPFSettings
 
     private SimHubSectionBridge _bridge = null!; // assigned in Init, which SimHub calls before any other member
     private DashboardSection _dashboard = null!; // assigned in Init
+    private RecordingSection _recording = null!; // assigned in Init
+    private string _recordingsFolder = "";
     private ITelemetrySection[] _sections = [];
 
     /// <summary>
@@ -50,6 +54,10 @@ public class DDTruckPlugin : IPlugin, IDataPlugin, IWPFSettings
         _bridge = new SimHubSectionBridge(pluginManager, GetType());
 
         _dashboard = new DashboardSection(Settings);
+
+        _recordingsFolder = Path.Combine(pluginManager.GetCommonStoragePath(), "DevDogs.TruckSimulator", "Recordings");
+        _recording = new RecordingSection(new TelemetryRecorder(), new FileRecordingTarget(_recordingsFolder), InformationalVersion);
+
         _sections =
         [
             new DamageSection(Settings),
@@ -60,6 +68,7 @@ public class DDTruckPlugin : IPlugin, IDataPlugin, IWPFSettings
             new LightsSection(),
             new LocalisationSection(EmptyCityNameSource.Instance),
             new NavigationSection(),
+            _recording,
         ];
 
         _dashboard.Register(_bridge);
@@ -68,7 +77,7 @@ public class DDTruckPlugin : IPlugin, IDataPlugin, IWPFSettings
             section.Register(_bridge);
         }
 
-        SimHub.Logging.Current.Info($"DevDogs.TruckSimulator {InformationalVersion} loaded");
+        SimHub.Logging.Current.Info($"DevDogs.TruckSimulator {InformationalVersion} loaded; recordings go to {_recordingsFolder}");
     }
 
     /// <summary>
@@ -108,17 +117,21 @@ public class DDTruckPlugin : IPlugin, IDataPlugin, IWPFSettings
     }
 
     /// <summary>
-    /// Saves settings when SimHub shuts down.
+    /// Finishes any recording and saves settings when SimHub shuts down.
     /// </summary>
     /// <param name="pluginManager">The SimHub plugin manager.</param>
-    public void End(PluginManager pluginManager) => this.SaveCommonSettings(SettingsKey, Settings);
+    public void End(PluginManager pluginManager)
+    {
+        _recording.Recorder.Dispose();
+        this.SaveCommonSettings(SettingsKey, Settings);
+    }
 
     /// <summary>
     /// Creates the settings page shown in SimHub.
     /// </summary>
     /// <param name="pluginManager">The SimHub plugin manager.</param>
     /// <returns>The settings control.</returns>
-    public Control GetWPFSettingsControl(PluginManager pluginManager) => new SettingsControl(Settings, InformationalVersion);
+    public Control GetWPFSettingsControl(PluginManager pluginManager) => new SettingsControl(Settings, _recording, _recordingsFolder, InformationalVersion);
 
     /// <summary>
     /// Gets the version including any pre-release suffix, for example <c>0.1.0-dev.1</c>.

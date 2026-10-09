@@ -133,5 +133,7 @@ public class RadarSectionTests
         host.Properties.Should().Contain(RadarSection.DebugCamerasLoaded, 707);
         host.Properties.Should().Contain(RadarSection.DebugGameVersion, "1.61.1.1");
         ((double)host.Properties[RadarSection.DebugTruckZ]).Should().Be(_berlinCamera.Z);
+        host.Properties.Should().Contain(RadarSection.DebugAheadCount, 1);
+        host.Properties.Should().Contain(RadarSection.DebugPassedCount, 1);
     }
 }

@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/DevDogs.TruckSimulator.Core/DevDogs.TruckSimulator.Core.csproj" />
+    <Project Path="src/DevDogs.TruckSimulator/DevDogs.TruckSimulator.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/DevDogs.TruckSimulator.Core.Tests/DevDogs.TruckSimulator.Core.Tests.csproj" />
+  </Folder>
+</Solution>

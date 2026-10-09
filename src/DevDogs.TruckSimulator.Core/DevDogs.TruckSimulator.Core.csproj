@@ -11,6 +11,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- Speed-camera databases, one folder per game (docs/adr/ADR-0004). -->
+    <EmbeddedResource Include="Radar\Data\**\camera_db.csv;Radar\Data\**\camera_db.meta.json"
+                      LogicalName="DevDogs.TruckSimulator.Radar/%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
     <InternalsVisibleTo Include="DevDogs.TruckSimulator.Core.Tests" />
   </ItemGroup>
 </Project>

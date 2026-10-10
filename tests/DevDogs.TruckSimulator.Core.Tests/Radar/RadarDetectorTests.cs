@@ -123,6 +123,22 @@ public class RadarDetectorTests
     }
 
     [Fact]
+    public void Update_PausedWithoutMoving_KeepsAlertForSameCamera()
+    {
+        // Real drive: a 44 s pause next to a camera released the alert and re-announced it.
+        var camera = Camera(0, -300);
+        var detector = new RadarDetector([camera]);
+        var beforePause = Drive(detector, (0, 0), (0, -1), 100).Last();
+
+        var afterPause = detector.Update(new WorldPosition { Z = -100 }, _start.AddSeconds(50), _config);
+        var movingAgain = Drive(detector, (0, -100), (0, -1), 20, startSeconds: 50.02);
+
+        beforePause.Camera.Should().BeSameAs(camera);
+        afterPause.Camera.Should().BeSameAs(camera);
+        movingAgain.Should().OnlyContain(r => r.Camera == camera);
+    }
+
+    [Fact]
     public void Update_TwoCamerasInARow_SwitchesToTheNext()
     {
         var first = Camera(0, -300, model: "first");
@@ -132,6 +148,66 @@ public class RadarDetectorTests
         var readings = Drive(detector, (0, 0), (0, -1), 500);
 
         readings.Select(r => r.Camera).Where(c => c is not null).Distinct().Should().Equal(first, second);
+    }
+
+    /// <summary>
+    /// The cameras a drive alerted for, in order, with consecutive repeats collapsed — one entry per
+    /// announcement. <see langword="null"/> entries are gaps with no alert.
+    /// </summary>
+    private static List<SpeedCamera?> Announcements(IEnumerable<RadarReading> readings)
+    {
+        var announcements = new List<SpeedCamera?>();
+        foreach (var camera in readings.Select(r => r.Camera))
+        {
+            if (announcements.Count == 0 || !ReferenceEquals(announcements[^1], camera))
+            {
+                announcements.Add(camera);
+            }
+        }
+
+        return announcements;
+    }
+
+    [Fact]
+    public void Update_RoadsideCamera_HoldsAlertUntilAlongsideInsteadOfAtConeEdge()
+    {
+        // Berlin poles stand ~20 m off the road; such a camera leaves a 25° cone 43 m before it is
+        // reached. Found in a real drive (2026-10-10): "passed" fired 40–50 m early.
+        var roadside = Camera(20, -400);
+        var detector = new RadarDetector([roadside]);
+
+        var readings = Drive(detector, (0, 0), (0, -1), 450);
+        var lastAlert = readings.FindLastIndex(r => r.Camera is not null);
+
+        Announcements(readings).Should().Equal(null, roadside, null);
+        readings[lastAlert].Distance.Should().BeLessThan(25);
+    }
+
+    [Fact]
+    public void Update_TwoRoadsideCamerasInARow_AnnouncesEachOnceWithoutFlipping()
+    {
+        // Real drive: alternated six times in six seconds between a camera 50 m ahead at the cone's
+        // edge and the next one 290 m further on.
+        var first = Camera(20, -300, model: "first");
+        var second = Camera(20, -560, model: "second");
+        var detector = new RadarDetector([first, second]);
+
+        var readings = Drive(detector, (0, 0), (0, -1), 600, speed: 5);
+
+        Announcements(readings).Where(c => c is not null).Should().Equal(first, second);
+    }
+
+    [Fact]
+    public void Update_TurningAwayFromCamera_ReleasesAlert()
+    {
+        var camera = Camera(0, -400);
+        var detector = new RadarDetector([camera]);
+        var approach = Drive(detector, (0, 0), (0, -1), 150).Last();
+
+        var afterTurn = Drive(detector, (0, -150), (1, 0), 60, startSeconds: 7.55).Last();
+
+        approach.Camera.Should().BeSameAs(camera);
+        afterTurn.Camera.Should().BeNull();
     }
 
     [Fact]

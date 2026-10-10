@@ -198,6 +198,22 @@ public class RadarDetectorTests
     }
 
     [Fact]
+    public void Update_NearerCameraComesIntoView_TakesOverFromFartherOne()
+    {
+        // Real drive (2026-10-10, dev.6): a camera 89 m ahead inside the cone was ignored while the
+        // radar held one 326 m away, and that nearer camera fined the driver.
+        var far = Camera(0, -330, model: "far");
+        var near = Camera(-60, -80, model: "near");
+        var detector = new RadarDetector([far, near]);
+        var straight = Drive(detector, (0, 0), (0, -1), 10).Last();
+
+        var bearingLeft = Drive(detector, (0, -10), (-0.36, -1), 12, startSeconds: 0.55).Last();
+
+        straight.Camera.Should().BeSameAs(far);
+        bearingLeft.Camera.Should().BeSameAs(near);
+    }
+
+    [Fact]
     public void Update_TurningAwayFromCamera_ReleasesAlert()
     {
         var camera = Camera(0, -400);

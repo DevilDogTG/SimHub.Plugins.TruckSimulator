@@ -19,6 +19,13 @@ public sealed record RadarConfig
     /// <summary>Gets the half-angle, in degrees, of the cone around the travel direction that counts as ahead.</summary>
     public double ConeDegrees { get; init; } = 25;
 
+    /// <summary>
+    /// Gets the half-angle, in degrees, within which a camera already being alerted is kept. Wider than
+    /// <see cref="ConeDegrees"/> because roadside cameras drift towards the side as the truck closes in
+    /// (a camera 20 m off the road leaves a 25° cone 43 m before it is reached).
+    /// </summary>
+    public double KeepConeDegrees { get; init; } = 60;
+
     /// <summary>Gets the height difference, in metres, beyond which a camera is on another road (bridge or underpass).</summary>
     public double MaxHeightDelta { get; init; } = 30;
 
@@ -28,7 +35,10 @@ public sealed record RadarConfig
     /// <summary>Gets the distance, in metres, moved in one update that counts as a teleport (ferry, train, load).</summary>
     public double JumpDistance { get; init; } = 100;
 
-    /// <summary>Gets the gap between updates beyond which the travel direction is forgotten (pause, load).</summary>
+    /// <summary>
+    /// Gets the gap between updates beyond which the movement across it isn't used for the travel
+    /// direction. The direction itself is kept, so a pause doesn't release an alert; only a jump does.
+    /// </summary>
     public TimeSpan MaxGap { get; init; } = TimeSpan.FromSeconds(1);
 }
 
@@ -82,36 +92,33 @@ public sealed class RadarDetector(IReadOnlyList<SpeedCamera> cameras)
     {
         UpdateDirection(position, at, config);
 
+        // The camera already being alerted is kept while it is still ahead (wider cone, release
+        // distance); only when it is passed or left behind is the next camera picked. This stops
+        // early "passed" alerts and flip-flopping between two cameras at the cone's edge.
+        var keptDistance = 0d;
+        var kept = _alerting is not null
+            && IsAhead(_alerting, position, config.AlertDistance + config.ReleaseMargin, config.KeepConeDegrees, config, out keptDistance);
+        var ahead = kept ? _alerting : null;
+        var aheadDistance = keptDistance;
+
         var nearest = default(SpeedCamera);
         var nearestDistance = double.MaxValue;
-        var ahead = default(SpeedCamera);
-        var limit = _alerting is null ? config.AlertDistance : config.AlertDistance + config.ReleaseMargin;
-        var aheadDistance = limit;
-        var cosCone = Math.Cos(config.ConeDegrees * Math.PI / 180);
-
         foreach (var camera in cameras)
         {
-            var vx = camera.X - position.X;
-            var vz = camera.Z - position.Z;
-            var distance = Math.Sqrt(vx * vx + vz * vz);
-
+            var distance = GroundDistance(camera, position);
             if (distance < nearestDistance)
             {
                 nearest = camera;
                 nearestDistance = distance;
             }
 
-            if (!_hasDirection
-                || distance >= aheadDistance
-                || distance < 1e-3
-                || Math.Abs(camera.Y - position.Y) > config.MaxHeightDelta
-                || (vx * _directionX + vz * _directionZ) / distance < cosCone)
+            if (!kept
+                && IsAhead(camera, position, config.AlertDistance, config.ConeDegrees, config, out var aheadOf)
+                && (ahead is null || aheadOf < aheadDistance))
             {
-                continue;
+                ahead = camera;
+                aheadDistance = aheadOf;
             }
-
-            ahead = camera;
-            aheadDistance = distance;
         }
 
         _alerting = ahead;
@@ -124,8 +131,53 @@ public sealed class RadarDetector(IReadOnlyList<SpeedCamera> cameras)
     }
 
     /// <summary>
-    /// Updates the smoothed travel direction from the movement since the last update, and forgets it
-    /// after a teleport or a long gap so the old direction is never applied to the new location.
+    /// Whether a camera is ahead: within <paramref name="maxDistance"/> on the ground plane, at a
+    /// similar height, and within <paramref name="coneDegrees"/> of the travel direction.
+    /// </summary>
+    /// <param name="camera">The camera.</param>
+    /// <param name="position">The truck's position.</param>
+    /// <param name="maxDistance">The furthest distance that counts, in metres.</param>
+    /// <param name="coneDegrees">The half-angle of the cone that counts, in degrees.</param>
+    /// <param name="config">Supplies the height limit.</param>
+    /// <param name="distance">The ground distance to the camera.</param>
+    /// <returns><see langword="true"/> when the camera is ahead.</returns>
+    private bool IsAhead(
+        SpeedCamera camera,
+        WorldPosition position,
+        double maxDistance,
+        double coneDegrees,
+        RadarConfig config,
+        out double distance)
+    {
+        distance = GroundDistance(camera, position);
+
+        return _hasDirection
+            && distance < maxDistance
+            && distance >= 1e-3
+            && Math.Abs(camera.Y - position.Y) <= config.MaxHeightDelta
+            && ((camera.X - position.X) * _directionX + (camera.Z - position.Z) * _directionZ) / distance
+                >= Math.Cos(coneDegrees * Math.PI / 180);
+    }
+
+    /// <summary>
+    /// The distance between a camera and the truck on the ground plane (X/Z), in metres.
+    /// </summary>
+    /// <param name="camera">The camera.</param>
+    /// <param name="position">The truck's position.</param>
+    /// <returns>The distance.</returns>
+    private static double GroundDistance(
+        SpeedCamera camera,
+        WorldPosition position)
+    {
+        var dx = camera.X - position.X;
+        var dz = camera.Z - position.Z;
+        return Math.Sqrt(dx * dx + dz * dz);
+    }
+
+    /// <summary>
+    /// Updates the smoothed travel direction from the movement since the last update. Forgets it after
+    /// a teleport (ferry, train, load) so the old direction is never applied to the new location; a long
+    /// gap without a jump (pause, menu) keeps it.
     /// </summary>
     /// <param name="position">The truck's world position.</param>
     /// <param name="at">The time of the position.</param>
@@ -142,14 +194,14 @@ public sealed class RadarDetector(IReadOnlyList<SpeedCamera> cameras)
             var moved = Math.Sqrt(dx * dx + dz * dz);
             var dt = (at - _previousAt).TotalSeconds;
 
-            if (moved > config.JumpDistance || at - _previousAt > config.MaxGap)
+            if (moved > config.JumpDistance)
             {
                 _hasDirection = false;
                 _directionX = 0;
                 _directionZ = 0;
                 _alerting = null;
             }
-            else if (dt > 0 && moved / dt >= config.MinSpeed)
+            else if (dt > 0 && at - _previousAt <= config.MaxGap && moved / dt >= config.MinSpeed)
             {
                 _directionX = ((1 - DirectionSmoothing) * _directionX) + (DirectionSmoothing * dx / moved);
                 _directionZ = ((1 - DirectionSmoothing) * _directionZ) + (DirectionSmoothing * dz / moved);

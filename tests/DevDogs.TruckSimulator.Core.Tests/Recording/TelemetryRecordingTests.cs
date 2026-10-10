@@ -114,7 +114,7 @@ public class TelemetryRecordingTests
     }
 
     [Fact]
-    public void RecordingSection_Toggle_StartsThenStopsRecordingToTarget()
+    public void RecordingSection_ToggleThenData_CreatesFileOnFirstUpdateAndRecords()
     {
         var target = new MemoryTarget();
         var host = new Sections.FakeSectionHost();
@@ -127,7 +127,50 @@ public class TelemetryRecordingTests
 
         host.Properties.Should().Contain(RecordingSection.Recording, false);
         section.Location.Should().Be("memory");
+        target.CreatedAt.Should().Be(_start);
         TelemetryRecordingFormat.Read(new MemoryStream(target.Stream.ToArray())).Single().Telemetry.Should().BeEquivalentTo(_sample);
+    }
+
+    [Fact]
+    public void RecordingSection_ToggleWithoutData_WaitsAndCreatesNoFile()
+    {
+        var target = new MemoryTarget();
+        var host = new Sections.FakeSectionHost();
+        var section = new RecordingSection(new TelemetryRecorder(), target, "0.1.0-test");
+        section.Register(host);
+
+        host.RunAction(RecordingSection.ToggleTelemetryRecording);
+
+        section.IsRecording.Should().BeTrue();
+        section.IsWaitingForData.Should().BeTrue();
+        host.Properties.Should().Contain(RecordingSection.Recording, true);
+        target.CreatedAt.Should().BeNull();
+    }
+
+    [Fact]
+    public void RecordingSection_StoppedBeforeData_NeverCreatesFile()
+    {
+        var target = new MemoryTarget();
+        var section = new RecordingSection(new TelemetryRecorder(), target, "0.1.0-test");
+
+        section.Toggle();
+        section.Toggle();
+        section.Update(_sample, _start, new Sections.FakeSectionHost());
+
+        section.IsRecording.Should().BeFalse();
+        target.CreatedAt.Should().BeNull();
+    }
+
+    [Fact]
+    public void RecordingSection_FileCannotBeCreated_ReportsErrorAndStopsWaiting()
+    {
+        var section = new RecordingSection(new TelemetryRecorder(), new FailingTarget(), "0.1.0-test");
+
+        section.Toggle();
+        section.Update(_sample, _start, new Sections.FakeSectionHost());
+
+        section.IsRecording.Should().BeFalse();
+        section.StartError.Should().BeOfType<UnauthorizedAccessException>();
     }
 
     [Fact]
@@ -157,12 +200,22 @@ public class TelemetryRecordingTests
     {
         public MemoryStream Stream { get; } = new();
 
+        public DateTime? CreatedAt { get; private set; }
+
         public Stream Create(
             DateTime startedAt,
             out string location)
         {
+            CreatedAt = startedAt;
             location = "memory";
             return Stream;
         }
+    }
+
+    private sealed class FailingTarget : IRecordingTarget
+    {
+        public Stream Create(
+            DateTime startedAt,
+            out string location) => throw new UnauthorizedAccessException("Access denied");
     }
 }

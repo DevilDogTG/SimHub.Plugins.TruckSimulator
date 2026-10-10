@@ -259,17 +259,7 @@ public partial class SettingsControl : UserControl
         object sender,
         RoutedEventArgs e)
     {
-        try
-        {
-            _model.Recording.Toggle(DateTime.UtcNow);
-        }
-        catch (Exception ex)
-        {
-            // Creating the file can fail (permissions, disk full); report it rather than crash SimHub's UI.
-            SimHub.Logging.Current.Error("DevDogs.TruckSimulator: could not start recording", ex);
-            MessageBox.Show(ex.Message, "Telemetry recording", MessageBoxButton.OK, MessageBoxImage.Warning);
-        }
-
+        _model.Recording.Toggle();
         RefreshRecordingStatus();
     }
 
@@ -293,15 +283,17 @@ public partial class SettingsControl : UserControl
     {
         var recording = _model.Recording;
         var recorder = recording.Recorder;
-        RecordButton.Content = recorder.IsRecording ? "Stop recording" : "Start recording";
+        RecordButton.Content = recording.IsRecording ? "Stop recording" : "Start recording";
 
-        RecordingStatus.Text = recorder switch
+        RecordingStatus.Text = recording switch
         {
-            { IsRecording: true } => $"Recording {recorder.RecordedTicks:N0} updates to {recording.Location}"
+            { IsWaitingForData: true } => "Waiting for ETS2 or ATS data; the file is created when the first update arrives.",
+            _ when recorder.IsRecording => $"Recording {recorder.RecordedTicks:N0} updates to {recording.Location}"
                 + (recorder.DroppedTicks > 0 ? $" ({recorder.DroppedTicks:N0} dropped)" : ""),
-            { LastError: { } error } => $"Recording stopped: {error.Message}",
+            { StartError: { } startError } => $"Could not create the recording file: {startError.Message}",
+            _ when recorder.LastError is { } error => $"Recording stopped: {error.Message}",
             _ when recording.Location.Length > 0 => $"Last recording: {recorder.RecordedTicks:N0} updates in {recording.Location}",
-            _ => "Not recording. Recordings only capture while ETS2 or ATS is running.",
+            _ => $"Not recording. Recordings go to {_model.RecordingsFolder} and only capture while ETS2 or ATS is running.",
         };
     }
 }

@@ -23,6 +23,25 @@ public sealed record TruckTelemetry
 
     /// <summary>Gets the in-game time left until the driver must rest.</summary>
     public TimeSpan NextRestStop { get; init; }
+
+    /// <summary>Gets the fine state: whether one was just given, and the last fine's details.</summary>
+    public FineState Fine { get; init; } = new();
+}
+
+/// <summary>
+/// Fines the game gives the driver. The game raises <see cref="Active"/> briefly when a fine is
+/// given and keeps the last fine's offence and amount until the next one.
+/// </summary>
+public sealed record FineState
+{
+    /// <summary>Gets a value indicating whether the game reports that a fine was just given.</summary>
+    public bool Active { get; init; }
+
+    /// <summary>Gets the last fine's offence as the game names it, for example <c>Speeding_camera</c> or <c>Speeding</c>; empty before the first fine.</summary>
+    public string Offence { get; init; } = "";
+
+    /// <summary>Gets the last fine's amount in the game's currency; 0 before the first fine.</summary>
+    public long Amount { get; init; }
 }
 
 /// <summary>

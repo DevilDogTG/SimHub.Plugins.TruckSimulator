@@ -14,6 +14,7 @@ public class TelemetryRecordingTests
     {
         Game = TruckGame.Ats,
         NextRestStop = new TimeSpan(9, 30, 0),
+        Fine = new FineState { Active = true, Offence = "Speeding_camera", Amount = 750 },
         Truck = new TruckState
         {
             Id = "vehicle.peterbilt.579",

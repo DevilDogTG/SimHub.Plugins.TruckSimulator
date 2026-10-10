@@ -54,6 +54,9 @@ internal static class TelemetryReader
         ["Navigation.Time"] = "GameRawData.NavigationValues.NavigationTime",
         ["Navigation.SpeedLimitMph"] = "GameRawData.Job.SpeedLimitMph",
         ["NextRestStop"] = "GameRawData.CommonValues.NextRestStop.Time",
+        ["Fine.Active"] = "GameRawData.SpecialEventsValues.Fined",
+        ["Fine.Offence"] = "GameRawData.GamePlay.FinedEvent.Offence",
+        ["Fine.Amount"] = "GameRawData.GamePlay.FinedEvent.Amount",
     };
 
     /// <summary>
@@ -110,6 +113,12 @@ internal static class TelemetryReader
         {
             Game = game,
             NextRestStop = sdk.CommonValues?.NextRestStop?.Time ?? TimeSpan.Zero,
+            Fine = new FineState
+            {
+                Active = sdk.SpecialEventsValues?.Fined ?? false,
+                Offence = sdk.GamePlay?.FinedEvent?.Amount > 0 ? sdk.GamePlay.FinedEvent.Offence.ToString() : "",
+                Amount = sdk.GamePlay?.FinedEvent?.Amount ?? 0,
+            },
             Truck = new TruckState
             {
                 Id = constants?.Id ?? "",

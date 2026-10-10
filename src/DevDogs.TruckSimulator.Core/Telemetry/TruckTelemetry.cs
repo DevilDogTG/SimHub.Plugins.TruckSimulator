@@ -29,12 +29,14 @@ public sealed record TruckTelemetry
 }
 
 /// <summary>
-/// Fines the game gives the driver. The game raises <see cref="Active"/> briefly when a fine is
-/// given and keeps the last fine's offence and amount until the next one.
+/// Fines the game gives the driver. <see cref="Active"/> is raised when a fine is given, but stays
+/// raised afterwards (seen for 6.5 minutes, through a disconnect, on 2026-10-10), so it marks only the
+/// first fine reliably; a change in <see cref="Offence"/> or <see cref="Amount"/> also signals a new
+/// fine, though two identical fines in a row can't be told apart.
 /// </summary>
 public sealed record FineState
 {
-    /// <summary>Gets a value indicating whether the game reports that a fine was just given.</summary>
+    /// <summary>Gets a value indicating whether the game reports that a fine was given.</summary>
     public bool Active { get; init; }
 
     /// <summary>Gets the last fine's offence as the game names it, for example <c>Speeding_camera</c> or <c>Speeding</c>; empty before the first fine.</summary>

@@ -57,7 +57,13 @@ public class DDTruckPlugin : IPlugin, IDataPlugin, IWPFSettings
 
         _dashboard = new DashboardSection(Settings);
 
-        _recordingsFolder = Path.Combine(pluginManager.GetCommonStoragePath(), "DevDogs.TruckSimulator", "Recordings");
+        // SimHub returns its storage path relative to its install folder; resolve it so the log and the
+        // settings page show where recordings really are.
+        _recordingsFolder = Path.GetFullPath(Path.Combine(
+            AppDomain.CurrentDomain.BaseDirectory,
+            pluginManager.GetCommonStoragePath(),
+            "DevDogs.TruckSimulator",
+            "Recordings"));
         _recording = new RecordingSection(new TelemetryRecorder(), new FileRecordingTarget(_recordingsFolder), InformationalVersion);
 
         _sections =

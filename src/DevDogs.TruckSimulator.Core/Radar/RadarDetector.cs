@@ -93,8 +93,9 @@ public sealed class RadarDetector(IReadOnlyList<SpeedCamera> cameras)
         UpdateDirection(position, at, config);
 
         // The camera already being alerted is kept while it is still ahead (wider cone, release
-        // distance); only when it is passed or left behind is the next camera picked. This stops
-        // early "passed" alerts and flip-flopping between two cameras at the cone's edge.
+        // distance), so a farther camera can't take over and roadside cameras aren't dropped at the
+        // cone's edge. A nearer camera coming into the cone still takes over: it is the one that
+        // fines first.
         var keptDistance = 0d;
         var kept = _alerting is not null
             && IsAhead(_alerting, position, config.AlertDistance + config.ReleaseMargin, config.KeepConeDegrees, config, out keptDistance);
@@ -112,8 +113,7 @@ public sealed class RadarDetector(IReadOnlyList<SpeedCamera> cameras)
                 nearestDistance = distance;
             }
 
-            if (!kept
-                && IsAhead(camera, position, config.AlertDistance, config.ConeDegrees, config, out var aheadOf)
+            if (IsAhead(camera, position, config.AlertDistance, config.ConeDegrees, config, out var aheadOf)
                 && (ahead is null || aheadOf < aheadDistance))
             {
                 ahead = camera;

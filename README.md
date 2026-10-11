@@ -21,7 +21,8 @@ Requires SimHub 9.x on Windows.
 
 Open **Truck Simulator** in SimHub's left menu:
 
-- **Settings:** over-speed margin, wear warning level, metric or imperial dashboard units.
+- **Settings:** over-speed margin, wear warning level, metric or imperial dashboard units, and the
+  speed-camera radar's alert distance, cone angle and "only cameras facing my direction" filter.
 - **Live telemetry:** switch on to see what this plugin reads from the game (each value with the SimHub
   property it comes from), every value it publishes, and its recent events. Only this plugin's data,
   so its values can't be confused with SimHub's own. Off by default; refreshed only while the tab is open.
@@ -81,6 +82,23 @@ Every name below is prefixed with `DDTruckPlugin.`, for example `DDTruckPlugin.J
 
 Translated names are not included yet; these properties show the names the game reports.
 
+### Speed-camera radar (ETS2)
+Warns when a fining speed camera is ahead. Cameras come from the game's map (707 in ETS2 1.61); a camera
+counts only when it faces your direction of travel, because that is the only traffic it fines. In real
+drives the game fined about 25 m before the camera, so the default 350 m alert gives plenty of warning.
+
+| Property | Type | Meaning |
+|---|---|---|
+| `Radar.CameraAhead` | bool | A camera facing your direction is ahead within the alert distance and cone. |
+| `Radar.Distance` | number | Distance to it: metres (metric) or miles (imperial); 0 when none. |
+| `Radar.DistanceMeters` | number | Distance to it in metres, whatever the unit setting. |
+| `Radar.CameraModel` | text | The camera model, for example `speed_camera_ch`. |
+| `Radar.OverSpeed` | bool | A camera is ahead and you are above the limit plus the over-speed margin. |
+| `Radar.Debug.*` | | Cameras loaded, database game version, truck X/Z, nearest camera (any direction) with distance, model and facing angle, alert counters. |
+
+The radar holds an alert until the camera is alongside, lets a nearer camera take over, and keeps the
+alert through pauses. Example dashboard: `examples/dashboards/DDTruck Radar Test`.
+
 ### Recording
 | Property | Type | Meaning |
 |---|---|---|
@@ -93,6 +111,7 @@ Translated names are not included yet; these properties show the names the game 
 | `DamageIncrease` | Average wear rose by more than one percentage point (not on start-up). |
 | `JobTaken`, `JobLoading`, `JobOngoing`, `JobCompleted`, `JobAbandoned` | `Job.Status` changes. |
 | `JobReset` | The `JobStatusReset` action ran. |
+| `RadarCameraAhead` / `RadarCameraPassed` | A camera came into the alert zone / was passed or left behind. |
 
 | Action | Does |
 |---|---|
@@ -120,6 +139,13 @@ dotnet build -c Release                 # needs SimHub installed; override with 
 dotnet test -c Release
 ./build/Install-DevBuild.ps1            # copy the build into SimHub (SimHub must be closed)
 ./build/New-ReleasePackage.ps1          # build, test and write artifacts/DevDogs.TruckSimulator-<version>.zip
+```
+
+The speed-camera database is generated from an extracted game (the extraction must include the sign
+models' `.pmg` files):
+
+```powershell
+dotnet run --project tools/DevDogs.TruckSimulator.DataTools -- cameras --base <extracted game root> --game ets2 --out src/DevDogs.TruckSimulator.Core/Radar/Data/ets2
 ```
 
 SimHub runs on .NET Framework 4.8, so the plugin targets `net48`; it is built and tested with the

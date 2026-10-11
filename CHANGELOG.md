@@ -17,6 +17,11 @@ First release: a rebuild of sjdawson's TruckSimulatorPlugin for SimHub 9.x, buil
   values and recent events.
 - Opt-in telemetry recording (`ToggleTelemetryRecording`), including the truck's world position and
   heading and any fines, for replaying real drives in tests.
+- Speed-camera radar for ETS2 (`DDTruckPlugin.Radar.*`, `RadarCameraAhead` / `RadarCameraPassed`): alerts
+  for cameras ahead that face your direction of travel, with distance, camera model and an over-speed
+  warning; settings for alert distance, cone angle and the facing filter; an example test dashboard.
+- `tools/DevDogs.TruckSimulator.DataTools`: generates the camera database, including each camera's
+  facing, from an extracted game.
 
 ### Changed
 - Properties use the `DDTruckPlugin.` prefix instead of `TruckSimulatorPlugin.`, so both plugins can be

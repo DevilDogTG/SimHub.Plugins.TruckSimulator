@@ -226,6 +226,73 @@ public class RadarDetectorTests
         afterTurn.Camera.Should().BeNull();
     }
 
+    /// <summary>Drives north (-Z) towards a camera 300 m ahead with the given facing.</summary>
+    private static List<RadarReading> DriveNorthTowards(
+        double? facing,
+        RadarConfig? config = null)
+    {
+        var detector = new RadarDetector([new SpeedCamera("uid", 0, 0, -300, "cam", facing)]);
+        var readings = new List<RadarReading>();
+        for (var step = 0; step < 120; step++)
+        {
+            readings.Add(detector.Update(new WorldPosition { Z = -step / 3.0 }, _start.AddSeconds(step / 60.0), config ?? _config));
+        }
+
+        return readings;
+    }
+
+    [Theory]
+    [InlineData(0.0)]
+    [InlineData(40.0)]
+    [InlineData(320.0)]
+    public void Update_CameraFacingTravelDirection_Alerts(double facing)
+    {
+        var readings = DriveNorthTowards(facing);
+
+        readings.Last().Camera.Should().NotBeNull();
+    }
+
+    [Theory]
+    [InlineData(180.0)]
+    [InlineData(90.0)]
+    [InlineData(50.0)]
+    public void Update_CameraFacingElsewhere_DoesNotAlert(double facing)
+    {
+        // Real drives: cameras 50–180° off the travel direction never fined.
+        var readings = DriveNorthTowards(facing);
+
+        readings.Should().OnlyContain(r => r.Camera == null);
+    }
+
+    [Fact]
+    public void Update_UnknownFacing_StillAlerts()
+    {
+        var readings = DriveNorthTowards(facing: null);
+
+        readings.Last().Camera.Should().NotBeNull();
+    }
+
+    [Fact]
+    public void Update_FacingFilterOff_AlertsForOppositeCamera()
+    {
+        var readings = DriveNorthTowards(180, _config with { UseFacing = false });
+
+        readings.Last().Camera.Should().NotBeNull();
+    }
+
+    [Theory]
+    [InlineData(0.0, 0.0)]
+    [InlineData(180.0, 180.0)]
+    [InlineData(270.0, 90.0)]
+    public void Update_NearestFacingDelta_ReportsAngleBetweenTravelAndFacing(
+        double facing,
+        double expected)
+    {
+        var reading = DriveNorthTowards(facing, _config with { UseFacing = false }).Last();
+
+        reading.NearestFacingDelta.Should().BeApproximately(expected, 0.5);
+    }
+
     [Fact]
     public void Update_AnyDirection_ReportsNearestCameraForDebugging()
     {

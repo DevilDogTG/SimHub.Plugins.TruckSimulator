@@ -26,6 +26,18 @@ public sealed record RadarConfig
     /// </summary>
     public double KeepConeDegrees { get; init; } = 60;
 
+    /// <summary>
+    /// Gets a value indicating whether only cameras facing the travel direction can alert. A camera fines
+    /// only traffic travelling the way it faces; cameras with unknown facing always qualify.
+    /// </summary>
+    public bool UseFacing { get; init; } = true;
+
+    /// <summary>
+    /// Gets how far, in degrees, a camera's facing may differ from the travel direction and still count.
+    /// Real fines were 0° and 3° off; unfined cameras were 50° or more off.
+    /// </summary>
+    public double FacingToleranceDegrees { get; init; } = 45;
+
     /// <summary>Gets the height difference, in metres, beyond which a camera is on another road (bridge or underpass).</summary>
     public double MaxHeightDelta { get; init; } = 30;
 
@@ -49,11 +61,16 @@ public sealed record RadarConfig
 /// <param name="Distance">Distance to <paramref name="Camera"/> on the ground plane, in metres; 0 when none.</param>
 /// <param name="Nearest">The nearest camera in any direction (for debugging), or <see langword="null"/> when there are none.</param>
 /// <param name="NearestDistance">Distance to <paramref name="Nearest"/>, in metres; 0 when none.</param>
+/// <param name="NearestFacingDelta">
+/// Degrees between the travel direction and the nearest camera's facing (0 = it enforces this
+/// direction, 180 = the opposite one); <see langword="null"/> when either is unknown.
+/// </param>
 public sealed record RadarReading(
     SpeedCamera? Camera,
     double Distance,
     SpeedCamera? Nearest,
-    double NearestDistance)
+    double NearestDistance,
+    double? NearestFacingDelta = null)
 {
     /// <summary>Gets a reading with nothing detected.</summary>
     public static RadarReading None { get; } = new(null, 0, null, 0);
@@ -98,7 +115,7 @@ public sealed class RadarDetector(IReadOnlyList<SpeedCamera> cameras)
         // fines first.
         var keptDistance = 0d;
         var kept = _alerting is not null
-            && IsAhead(_alerting, position, config.AlertDistance + config.ReleaseMargin, config.KeepConeDegrees, config, out keptDistance);
+            && IsAhead(_alerting, position, config.AlertDistance + config.ReleaseMargin, config.KeepConeDegrees, checkFacing: false, config, out keptDistance);
         var ahead = kept ? _alerting : null;
         var aheadDistance = keptDistance;
 
@@ -113,7 +130,7 @@ public sealed class RadarDetector(IReadOnlyList<SpeedCamera> cameras)
                 nearestDistance = distance;
             }
 
-            if (IsAhead(camera, position, config.AlertDistance, config.ConeDegrees, config, out var aheadOf)
+            if (IsAhead(camera, position, config.AlertDistance, config.ConeDegrees, config.UseFacing, config, out var aheadOf)
                 && (ahead is null || aheadOf < aheadDistance))
             {
                 ahead = camera;
@@ -127,7 +144,26 @@ public sealed class RadarDetector(IReadOnlyList<SpeedCamera> cameras)
             ahead,
             ahead is null ? 0 : aheadDistance,
             nearest,
-            nearest is null ? 0 : nearestDistance);
+            nearest is null ? 0 : nearestDistance,
+            nearest is null ? null : FacingDelta(nearest));
+    }
+
+    /// <summary>
+    /// The angle between the travel direction and a camera's facing.
+    /// </summary>
+    /// <param name="camera">The camera.</param>
+    /// <returns>Degrees 0..180, or <see langword="null"/> when the direction or facing is unknown.</returns>
+    private double? FacingDelta(SpeedCamera camera)
+    {
+        if (!_hasDirection || camera.Facing is not { } facing)
+        {
+            return null;
+        }
+
+        // Compass heading h points along (sin h, -cos h) in world X/Z (0 = -Z north, 90 = +X east).
+        var radians = facing * Math.PI / 180;
+        var dot = (Math.Sin(radians) * _directionX) - (Math.Cos(radians) * _directionZ);
+        return Math.Acos(Math.Max(-1, Math.Min(1, dot))) * 180 / Math.PI;
     }
 
     /// <summary>
@@ -138,7 +174,8 @@ public sealed class RadarDetector(IReadOnlyList<SpeedCamera> cameras)
     /// <param name="position">The truck's position.</param>
     /// <param name="maxDistance">The furthest distance that counts, in metres.</param>
     /// <param name="coneDegrees">The half-angle of the cone that counts, in degrees.</param>
-    /// <param name="config">Supplies the height limit.</param>
+    /// <param name="checkFacing">Whether the camera must also face the travel direction.</param>
+    /// <param name="config">Supplies the height limit and facing tolerance.</param>
     /// <param name="distance">The ground distance to the camera.</param>
     /// <returns><see langword="true"/> when the camera is ahead.</returns>
     private bool IsAhead(
@@ -146,10 +183,16 @@ public sealed class RadarDetector(IReadOnlyList<SpeedCamera> cameras)
         WorldPosition position,
         double maxDistance,
         double coneDegrees,
+        bool checkFacing,
         RadarConfig config,
         out double distance)
     {
         distance = GroundDistance(camera, position);
+
+        if (checkFacing && FacingDelta(camera) is { } delta && delta > config.FacingToleranceDegrees)
+        {
+            return false;
+        }
 
         return _hasDirection
             && distance < maxDistance

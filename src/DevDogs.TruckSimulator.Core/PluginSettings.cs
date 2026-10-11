@@ -23,4 +23,10 @@ public sealed class PluginSettings
 
     /// <summary>Gets or sets the half-angle, in degrees, of the cone ahead of the truck the radar watches.</summary>
     public int RadarConeAngle { get; set; } = 25;
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the radar alerts only for cameras facing the travel
+    /// direction (the ones that can fine the driver).
+    /// </summary>
+    public bool RadarFacingFilter { get; set; } = true;
 }

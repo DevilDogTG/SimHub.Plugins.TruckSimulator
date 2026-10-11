@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Text;
+using System.Text.Encodings.Web;
 using System.Text.Json;
 
 namespace DevDogs.TruckSimulator.DataTools.Cameras;
@@ -42,7 +43,9 @@ internal static class CameraDatabaseFile
             ["facing"] = "compass degrees of the sign node's forward axis = travel direction the camera enforces "
                 + "(0 = -Z north, 90 = +X east); empty when the node wasn't found",
         };
-        var json = JsonSerializer.Serialize(meta, new JsonSerializerOptions { WriteIndented = true });
+        // Relaxed escaping keeps ' and + readable; the file is metadata read by people and the plugin,
+        // never embedded in HTML, so HTML-safe escaping buys nothing.
+        var json = JsonSerializer.Serialize(meta, new JsonSerializerOptions { WriteIndented = true, Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping });
         File.WriteAllText(Path.Combine(directory, "camera_db.meta.json"), json.Replace("\r\n", "\n") + "\n", new UTF8Encoding(false));
     }
 

@@ -17,12 +17,17 @@ namespace DevDogs.TruckSimulator.Core.Radar;
 /// <param name="Y">World Y (height), in metres.</param>
 /// <param name="Z">World Z, in metres.</param>
 /// <param name="Model">The camera model, for example <c>speed_camera_ch</c>.</param>
+/// <param name="Facing">
+/// The travel direction the camera enforces, as a compass heading in degrees (0 = -Z north, 90 = +X
+/// east); <see langword="null"/> when the database doesn't say.
+/// </param>
 public sealed record SpeedCamera(
     string Uid,
     double X,
     double Y,
     double Z,
-    string Model);
+    string Model,
+    double? Facing = null);
 
 /// <summary>
 /// The speed cameras of one game, extracted from that game's map for one game version.
@@ -67,8 +72,9 @@ public sealed record CameraDatabase(
     }
 
     /// <summary>
-    /// Reads a database: the metadata JSON and the <c>uid,x,y,z,unit,model,sector</c> CSV written by
-    /// the DriveDogs Radar extraction tools. Malformed rows are skipped.
+    /// Reads a database: the metadata JSON and the <c>uid,x,y,z,unit,model,sector[,facing]</c> CSV written
+    /// by <c>tools/DevDogs.TruckSimulator.DataTools</c>. The optional <c>facing</c> column is found by its
+    /// header name; databases without it load with unknown facing. Malformed rows are skipped.
     /// </summary>
     /// <param name="game">The game the database belongs to.</param>
     /// <param name="metaJson">The <c>camera_db.meta.json</c> content.</param>
@@ -87,7 +93,7 @@ public sealed record CameraDatabase(
         }
 
         var cameras = new List<SpeedCamera>();
-        csv.ReadLine();
+        var facingColumn = Array.IndexOf((csv.ReadLine() ?? "").Split(','), "facing");
         while (csv.ReadLine() is { } line)
         {
             var cells = line.Split(',');
@@ -96,7 +102,10 @@ public sealed record CameraDatabase(
                 && TryParse(cells[2], out var y)
                 && TryParse(cells[3], out var z))
             {
-                cameras.Add(new SpeedCamera(cells[0], x, y, z, cells[5]));
+                double? facing = facingColumn >= 0 && facingColumn < cells.Length && TryParse(cells[facingColumn], out var f)
+                    ? f
+                    : null;
+                cameras.Add(new SpeedCamera(cells[0], x, y, z, cells[5], facing));
             }
         }
 

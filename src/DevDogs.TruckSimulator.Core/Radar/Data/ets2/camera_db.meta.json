@@ -1,16 +1,18 @@
 {
- "game": "ets2",
- "game_version": "1.61.1.1",
- "cameras": 707,
- "source": "DriveDogs Radar tools/extract_camera_db.py",
- "columns": [
-  "uid",
-  "x",
-  "y",
-  "z",
-  "unit",
-  "model",
-  "sector"
- ],
- "coordinates": "world space, metres - same as SCS telemetry truck.world.placement"
+  "game": "ets2",
+  "game_version": "1.61.1.1",
+  "cameras": 707,
+  "source": "DevDogs.TruckSimulator tools/DevDogs.TruckSimulator.DataTools (cameras)",
+  "columns": [
+    "uid",
+    "x",
+    "y",
+    "z",
+    "unit",
+    "model",
+    "sector",
+    "facing"
+  ],
+  "coordinates": "world space, metres - same as SCS telemetry truck.world.placement",
+  "facing": "compass degrees of the sign node's forward axis = travel direction the camera enforces (0 = -Z north, 90 = +X east); empty when the node wasn't found"
 }

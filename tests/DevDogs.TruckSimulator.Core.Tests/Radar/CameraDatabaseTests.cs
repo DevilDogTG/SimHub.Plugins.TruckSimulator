@@ -24,6 +24,33 @@ public class CameraDatabaseTests
     }
 
     [Fact]
+    public void Parse_FacingColumn_ReadsFacingAndEmptyAsUnknown()
+    {
+        var csv = new StringReader("""
+            uid,x,y,z,unit,model,sector,facing
+            580b28fe81260001,10515.47,44.14,-8840.42,sign.ch_37007,speed_camera_ch,sec+0002-0003,85.8
+            580b2d100ba60000,10280.59,43.83,-8798.37,sign.ch_37007,speed_camera_ch,sec+0002-0003,
+            """);
+
+        var database = CameraDatabase.Parse(TruckGame.Ets2, Ets2Meta, csv);
+
+        database.Cameras.Select(c => c.Facing).Should().Equal(85.8, null);
+    }
+
+    [Fact]
+    public void Parse_NoFacingColumn_LoadsWithUnknownFacing()
+    {
+        var csv = new StringReader("""
+            uid,x,y,z,unit,model,sector
+            ok,1,2,3,unit,model,sector
+            """);
+
+        var database = CameraDatabase.Parse(TruckGame.Ets2, Ets2Meta, csv);
+
+        database.Cameras.Single().Facing.Should().BeNull();
+    }
+
+    [Fact]
     public void Parse_MalformedRows_AreSkipped()
     {
         var csv = new StringReader("""
@@ -54,6 +81,7 @@ public class CameraDatabaseTests
         database.Should().NotBeNull();
         database!.GameVersion.Should().Be("1.61.1.1");
         database.Cameras.Should().HaveCount(707);
+        database.Cameras.Should().OnlyContain(c => c.Facing != null);
         database.Cameras.Count(c => c.X is > 8500 and < 13500 && c.Z is > -11500 and < -8000).Should().BeGreaterThanOrEqualTo(20);
     }
 

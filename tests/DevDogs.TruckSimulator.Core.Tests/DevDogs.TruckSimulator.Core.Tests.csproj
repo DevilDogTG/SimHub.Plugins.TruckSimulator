@@ -17,6 +17,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\DevDogs.TruckSimulator.Core\DevDogs.TruckSimulator.Core.csproj" />
+    <ProjectReference Include="..\..\tools\DevDogs.TruckSimulator.DataTools\DevDogs.TruckSimulator.DataTools.csproj" />
   </ItemGroup>
 
   <ItemGroup>

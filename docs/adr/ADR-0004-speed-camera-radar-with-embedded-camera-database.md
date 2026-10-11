@@ -1,7 +1,7 @@
 # ADR-0004: Speed-camera radar with an embedded camera database
 
 **Date:** 2026-10-09
-**Status:** accepted
+**Status:** accepted; data source superseded by ADR-0005 (generated in this repo)
 **Deciders:** DevDogs (maintainer)
 
 ## Context

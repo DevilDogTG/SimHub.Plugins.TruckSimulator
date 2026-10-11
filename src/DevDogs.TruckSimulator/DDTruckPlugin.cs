@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Windows.Controls;
+using System.Windows.Media;
 using DevDogs.TruckSimulator.Core;
 using DevDogs.TruckSimulator.Core.Diagnostics;
 using DevDogs.TruckSimulator.Core.Localisation;
@@ -22,7 +23,7 @@ namespace DevDogs.TruckSimulator;
 [PluginName("DevDogs Truck Simulator")]
 [PluginDescription("Additional properties, events and actions for Euro Truck Simulator 2 and American Truck Simulator.")]
 [PluginAuthor("DevDogs")]
-public class DDTruckPlugin : IPlugin, IDataPlugin, IWPFSettings
+public class DDTruckPlugin : IPlugin, IDataPlugin, IWPFSettingsV2
 {
     /// <summary>The key SimHub stores this plugin's settings under.</summary>
     private const string SettingsKey = "DDTruckPluginSettings";
@@ -40,6 +41,17 @@ public class DDTruckPlugin : IPlugin, IDataPlugin, IWPFSettings
     /// Gets or sets the SimHub plugin manager; assigned by SimHub before <see cref="Init"/> is called.
     /// </summary>
     public PluginManager PluginManager { get; set; } = null!; // set by SimHub before Init
+
+    /// <summary>
+    /// Gets the name shown in SimHub's left menu. Shorter than the plugin name ("DevDogs Truck
+    /// Simulator"), which stays on the plugin's own page and in SimHub's plugin list.
+    /// </summary>
+    public string LeftMenuTitle => "Truck Simulator";
+
+    /// <summary>
+    /// Gets the icon shown in SimHub's left menu.
+    /// </summary>
+    public ImageSource PictureIcon { get; } = PluginIcon.Create();
 
     /// <summary>
     /// Gets the user settings; loaded in <see cref="Init"/>.

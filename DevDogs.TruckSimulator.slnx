@@ -6,4 +6,7 @@
   <Folder Name="/tests/">
     <Project Path="tests/DevDogs.TruckSimulator.Core.Tests/DevDogs.TruckSimulator.Core.Tests.csproj" />
   </Folder>
+  <Folder Name="/tools/">
+    <Project Path="tools/DevDogs.TruckSimulator.DataTools/DevDogs.TruckSimulator.DataTools.csproj" />
+  </Folder>
 </Solution>

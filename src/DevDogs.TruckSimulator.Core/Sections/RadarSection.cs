@@ -54,6 +54,12 @@ public sealed class RadarSection(
     /// <summary>Debug property: model of the nearest camera in any direction.</summary>
     public const string DebugNearestModel = "Radar.Debug.NearestModel";
 
+    /// <summary>
+    /// Debug property: degrees between the travel direction and the nearest camera's facing (0 = it
+    /// enforces this direction); -1 when unknown.
+    /// </summary>
+    public const string DebugNearestFacingDelta = "Radar.Debug.NearestFacingDelta";
+
     /// <summary>Debug property: <see cref="RadarCameraAhead"/> events since SimHub started, to spot double-fires.</summary>
     public const string DebugAheadCount = "Radar.Debug.AheadCount";
 
@@ -83,6 +89,7 @@ public sealed class RadarSection(
         host.AddProperty(DebugTruckZ, 0d);
         host.AddProperty(DebugNearestDistance, 0d);
         host.AddProperty(DebugNearestModel, "");
+        host.AddProperty(DebugNearestFacingDelta, -1d);
         host.AddProperty(DebugAheadCount, 0);
         host.AddProperty(DebugPassedCount, 0);
     }
@@ -133,6 +140,7 @@ public sealed class RadarSection(
         output.SetProperty(DebugTruckZ, telemetry.Truck.Position.Z);
         output.SetProperty(DebugNearestDistance, reading.NearestDistance);
         output.SetProperty(DebugNearestModel, reading.Nearest?.Model ?? "");
+        output.SetProperty(DebugNearestFacingDelta, reading.NearestFacingDelta ?? -1d);
         output.SetProperty(DebugAheadCount, _aheadCount);
         output.SetProperty(DebugPassedCount, _passedCount);
     }
@@ -145,6 +153,7 @@ public sealed class RadarSection(
     {
         AlertDistance = settings.RadarAlertDistance,
         ConeDegrees = settings.RadarConeAngle,
+        UseFacing = settings.RadarFacingFilter,
     };
 
     /// <summary>

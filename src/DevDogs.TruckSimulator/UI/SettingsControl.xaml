@@ -26,6 +26,7 @@
                 <RowDefinition Height="48" />
                 <RowDefinition Height="40" />
                 <RowDefinition Height="40" />
+                <RowDefinition Height="40" />
               </Grid.RowDefinitions>
 
               <TextBlock Grid.Row="0" VerticalAlignment="Center" Text="Over speed margin (mph)"
@@ -66,6 +67,11 @@
                       Value="{Binding Settings.RadarConeAngle, Mode=TwoWay}" />
               <TextBlock Grid.Row="5" Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Right"
                          Text="{Binding Settings.RadarConeAngle}" />
+
+              <TextBlock Grid.Row="6" VerticalAlignment="Center" Text="Only cameras facing my direction"
+                         ToolTip="Cameras fine only traffic travelling the way they face. Off: alert for every camera ahead, including the opposite carriageway." />
+              <CheckBox Grid.Row="6" Grid.Column="1" VerticalAlignment="Center"
+                        IsChecked="{Binding Settings.RadarFacingFilter, Mode=TwoWay}" />
             </Grid>
 
             <TextBlock Margin="0,16,0,0" TextWrapping="Wrap" Opacity="0.7"

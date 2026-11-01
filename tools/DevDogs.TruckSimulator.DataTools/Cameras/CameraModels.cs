@@ -12,9 +12,14 @@ namespace DevDogs.TruckSimulator.DataTools.Cameras;
 /// </summary>
 /// <param name="Model">The model path without extension, for example <c>model/sign/traffic/ch/speed_camera_ch</c>.</param>
 /// <param name="SignUnits">The <c>sign_model</c> units that place it, for example <c>sign.ch_37007</c>.</param>
+/// <param name="Direction">
+/// The travel direction the camera enforces, in degrees clockwise from the sign node's forward axis;
+/// <see langword="null"/> when its camera locators enforce more than one direction (a two-way camera).
+/// </param>
 internal sealed record CameraModel(
     string Model,
-    IReadOnlyList<string> SignUnits);
+    IReadOnlyList<string> SignUnits,
+    double? Direction);
 
 /// <summary>
 /// The outcome of looking for camera models.
@@ -32,7 +37,7 @@ internal sealed record CameraModelScan(
 /// candidates are the models of the <c>sign_model</c> units in <c>def/world/sign*.sii</c>; a model is a
 /// camera when its <c>.pmg</c> has a <c>speedcam.*</c> hookup other than <c>speedcam.toll</c>
 /// (Scandinavian toll gates, not speed enforcement). Port of the DriveDogs Radar
-/// <c>tools/scan_cameras.py</c>.
+/// <c>tools/scan_cameras.py</c>, plus the direction each model enforces.
 /// </summary>
 internal static partial class CameraModels
 {
@@ -40,12 +45,25 @@ internal static partial class CameraModels
     private const string TollHookup = "speedcam.toll";
 
     /// <summary>
+    /// Locators of one model whose directions are within this many degrees enforce the same direction.
+    /// </summary>
+    private const double SameDirectionDegrees = 5;
+
+    /// <summary>
     /// Scans an extracted game.
     /// </summary>
     /// <param name="baseDirectory">The extracted game root (containing <c>def</c>, <c>model</c>, <c>map</c>).</param>
     /// <returns>The camera models found, sorted by model path.</returns>
+    /// <exception cref="InvalidOperationException">The game defines no speed camera hookups.</exception>
     public static CameraModelScan Find(string baseDirectory)
     {
+        var hookupFile = Path.Combine(baseDirectory, "unit", "hookup", "speed_camera.sii");
+        if (!File.Exists(hookupFile))
+        {
+            throw new InvalidOperationException($"{hookupFile} not found; it says which camera hookups enforce the reverse direction.");
+        }
+
+        var reversed = ReversedHookups(File.ReadAllText(hookupFile));
         var units = SignUnitsByModel(Path.Combine(baseDirectory, "def", "world"));
         var cameras = new List<CameraModel>();
         var read = 0;
@@ -65,14 +83,72 @@ internal static partial class CameraModels
                 continue;
             }
 
-            var hookups = PmgLocators.Read(bytes).Select(l => l.Hookup).OfType<string>().ToList();
-            if (hookups.Any(h => h.StartsWith(SpeedCameraHookupPrefix, StringComparison.Ordinal) && h != TollHookup))
+            var locators = PmgLocators.Read(bytes)
+                .Where(l => l.Hookup is { } h && h.StartsWith(SpeedCameraHookupPrefix, StringComparison.Ordinal) && h != TollHookup)
+                .ToList();
+            if (locators.Count > 0)
             {
-                cameras.Add(new CameraModel(model, signUnits));
+                cameras.Add(new CameraModel(model, signUnits, Direction(locators, reversed)));
             }
         }
 
         return new CameraModelScan(cameras, units.Count, read);
+    }
+
+    /// <summary>
+    /// The direction a camera model enforces, relative to its node's forward axis. A camera locator's
+    /// forward axis looks at the traffic it measures, so it enforces the opposite heading, unless its
+    /// hookup has <c>reverse_direction</c>. Calibrated on <c>speed_camera_ch</c> (ADR-0005's Berlin fines):
+    /// locator turned 180°, plain hookup, enforces the node's own forward direction.
+    /// </summary>
+    /// <param name="locators">The model's camera locators.</param>
+    /// <param name="reversed">The hookups that enforce the reverse direction.</param>
+    /// <returns>Degrees clockwise from the node's forward axis, 0..360; <see langword="null"/> when the locators disagree.</returns>
+    internal static double? Direction(
+        IReadOnlyList<PmgLocator> locators,
+        IReadOnlySet<string> reversed)
+    {
+        var directions = locators
+            .Select(l => Normalize(MapCameras.CompassFromYawQuaternion(l.Rotation.W, l.Rotation.Y) + (reversed.Contains(l.Hookup!) ? 0 : 180)))
+            .ToList();
+        var first = directions[0];
+        return directions.All(d => AngleBetween(d, first) <= SameDirectionDegrees) ? first : null;
+    }
+
+    /// <summary>
+    /// Reads which <c>speed_camera</c> hookups enforce the reverse direction.
+    /// </summary>
+    /// <param name="sii">The content of <c>unit/hookup/speed_camera.sii</c>.</param>
+    /// <returns>The hookup names with <c>reverse_direction: true</c>, for example <c>speedcam.r</c>.</returns>
+    internal static IReadOnlySet<string> ReversedHookups(string sii) =>
+        HookupUnitPattern().Matches(sii)
+            .Where(m => ReverseDirectionPattern().IsMatch(m.Groups[2].Value))
+            .Select(m => m.Groups[1].Value)
+            .ToHashSet(StringComparer.Ordinal);
+
+    /// <summary>
+    /// Wraps an angle into 0..360, keeping one decimal.
+    /// </summary>
+    /// <param name="degrees">The angle.</param>
+    /// <returns>The wrapped angle.</returns>
+    internal static double Normalize(double degrees)
+    {
+        var wrapped = Math.Round(((degrees % 360) + 360) % 360, 1);
+        return wrapped >= 360 ? 0 : wrapped;
+    }
+
+    /// <summary>
+    /// The smaller angle between two headings.
+    /// </summary>
+    /// <param name="a">One heading.</param>
+    /// <param name="b">The other heading.</param>
+    /// <returns>Degrees, 0..180.</returns>
+    private static double AngleBetween(
+        double a,
+        double b)
+    {
+        var delta = Math.Abs(a - b) % 360;
+        return delta > 180 ? 360 - delta : delta;
     }
 
     /// <summary>
@@ -123,4 +199,10 @@ internal static partial class CameraModels
 
     [GeneratedRegex("model_desc\\s*:\\s*\"/?([^\"]+)\\.pmd\"")]
     private static partial Regex ModelDescPattern();
+
+    [GeneratedRegex(@"^\s*speed_camera\s*:\s*([\w.]+)\s*\{(.*?)^\s*\}", RegexOptions.Multiline | RegexOptions.Singleline)]
+    private static partial Regex HookupUnitPattern();
+
+    [GeneratedRegex(@"^\s*reverse_direction\s*:\s*true\b", RegexOptions.Multiline)]
+    private static partial Regex ReverseDirectionPattern();
 }

@@ -1,6 +1,7 @@
 using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
+using System.Numerics;
 using System.Text;
 
 namespace DevDogs.TruckSimulator.DataTools.Scs;
@@ -10,14 +11,18 @@ namespace DevDogs.TruckSimulator.DataTools.Scs;
 /// </summary>
 /// <param name="Name">The locator name.</param>
 /// <param name="Hookup">The hookup attached to it, for example <c>speedcam.20</c>, or <see langword="null"/>.</param>
+/// <param name="Position">The position in model space, in metres.</param>
+/// <param name="Rotation">The rotation in model space.</param>
 internal sealed record PmgLocator(
     string Name,
-    string? Hookup);
+    string? Hookup,
+    Vector3 Position,
+    Quaternion Rotation);
 
 /// <summary>
 /// Reads the locators of a PMG 0x15 model file (the format of every base-game static model).
 /// Layout ported from the DriveDogs Radar tools: header with counts at 4, offsets at 72; locators of
-/// 44 bytes (<c>u64 name, 3 f32 position, f32 scale, 4 f32 rotation, i32 hookup string offset</c>);
+/// 44 bytes (<c>u64 name, 3 f32 position, f32 scale, 4 f32 rotation w,x,y,z, i32 hookup string offset</c>);
 /// hookup names in a NUL-terminated string pool.
 /// </summary>
 internal static class PmgLocators
@@ -26,6 +31,8 @@ internal static class PmgLocators
     private const int LocatorsOffsetAt = 72 + 2 * 4;
     private const int StringsOffsetAt = 72 + 4 * 4;
     private const int LocatorSize = 44;
+    private const int PositionAt = 8;
+    private const int RotationAt = 24;
     private const int HookupAt = 40;
 
     /// <summary>
@@ -51,11 +58,25 @@ internal static class PmgLocators
             var locator = pmg.Slice(locators + i * LocatorSize, LocatorSize);
             var name = ScsToken.Decode(BinaryPrimitives.ReadUInt64LittleEndian(locator));
             var hookupAt = BinaryPrimitives.ReadInt32LittleEndian(locator[HookupAt..]);
-            result.Add(new PmgLocator(name, hookupAt < 0 ? null : ReadString(pmg[(strings + hookupAt)..])));
+            result.Add(new PmgLocator(
+                name,
+                hookupAt < 0 ? null : ReadString(pmg[(strings + hookupAt)..]),
+                new Vector3(Single(locator, PositionAt), Single(locator, PositionAt + 4), Single(locator, PositionAt + 8)),
+                new Quaternion(Single(locator, RotationAt + 4), Single(locator, RotationAt + 8), Single(locator, RotationAt + 12), Single(locator, RotationAt))));
         }
 
         return result;
     }
+
+    /// <summary>
+    /// Reads a little-endian 32-bit float.
+    /// </summary>
+    /// <param name="data">The bytes.</param>
+    /// <param name="offset">The offset of the value.</param>
+    /// <returns>The value.</returns>
+    private static float Single(
+        ReadOnlySpan<byte> data,
+        int offset) => BinaryPrimitives.ReadSingleLittleEndian(data[offset..]);
 
     /// <summary>
     /// Reads a NUL-terminated ASCII string.

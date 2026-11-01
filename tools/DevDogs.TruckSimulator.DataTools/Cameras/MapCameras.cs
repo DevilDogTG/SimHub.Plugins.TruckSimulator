@@ -18,8 +18,9 @@ namespace DevDogs.TruckSimulator.DataTools.Cameras;
 /// <param name="Model">The model name, for example <c>speed_camera_ch</c>.</param>
 /// <param name="Sector">The map sector, for example <c>sec+0002-0003</c>.</param>
 /// <param name="Facing">
-/// Compass heading of the sign node's forward axis, which is the travel direction the camera enforces
-/// (0 = -Z north, 90 = +X east); <see langword="null"/> when the node wasn't found.
+/// Compass heading of the travel direction the camera enforces: the sign node's forward axis turned by
+/// the model's <see cref="CameraModel.Direction"/> (0 = -Z north, 90 = +X east); <see langword="null"/>
+/// when the node wasn't found or the camera enforces both directions.
 /// </param>
 internal sealed record MapCamera(
     ulong Uid,
@@ -35,7 +36,8 @@ internal sealed record MapCamera(
 /// Finds placed cameras in the map sectors. Sign items (type 36) are found by the model token of each
 /// camera's sign unit, validating the fixed item header in front of it
 /// (<c>u32 type | u64 uid | f32 kdop_min[5] | f32 kdop_max[5] | u32 flags | u8 view_distance | u64 model | u64 node</c>);
-/// the node record (<c>u64 uid | i32 position×256 [3] | f32 quaternion w,x,y,z</c>) gives the facing.
+/// the node record (<c>u64 uid | i32 position×256 [3] | f32 quaternion w,x,y,z</c>) gives the node's
+/// heading, which the model's camera locators turn into the facing.
 /// Port of the DriveDogs Radar <c>tools/extract_camera_db.py</c>, plus the facing (map format 907, 1.61).
 /// </summary>
 internal static class MapCameras
@@ -60,7 +62,7 @@ internal static class MapCameras
         IReadOnlyList<CameraModel> models)
     {
         var tokens = models
-            .SelectMany(m => m.SignUnits.Select(u => (Token: ScsToken.Encode(u[(u.IndexOf('.') + 1)..]), Unit: u, Model: m.Model)))
+            .SelectMany(m => m.SignUnits.Select(u => (Token: ScsToken.Encode(u[(u.IndexOf('.') + 1)..]), Unit: u, Model: m)))
             .ToList();
         var cameras = new Dictionary<ulong, MapCamera>();
         var files = Directory.GetFiles(mapDirectory)
@@ -91,8 +93,9 @@ internal static class MapCameras
 
                     var (x, y, z) = BoundsCentre(data.AsSpan(at + BoundsOffset));
                     var node = BinaryPrimitives.ReadUInt64LittleEndian(data.AsSpan(at + NodeOffset));
-                    var facing = NodeFacing(SectorBytes(sectorBytes, mapDirectory, sector), node, x, z);
-                    var modelName = model[(model.LastIndexOf('/') + 1)..];
+                    var nodeFacing = NodeFacing(SectorBytes(sectorBytes, mapDirectory, sector), node, x, z);
+                    var modelName = model.Model[(model.Model.LastIndexOf('/') + 1)..];
+                    var facing = Facing(nodeFacing, model.Direction);
                     cameras[uid] = new MapCamera(uid, Math.Round(x, 2), Math.Round(y, 2), Math.Round(z, 2), unit, modelName, sector, facing);
                 }
             }
@@ -103,6 +106,17 @@ internal static class MapCameras
             .ThenBy(c => c.Uid.ToString("x16"), StringComparer.Ordinal)
             .ToList();
     }
+
+    /// <summary>
+    /// The travel direction a placed camera enforces.
+    /// </summary>
+    /// <param name="nodeFacing">The compass heading of the sign node's forward axis, if found.</param>
+    /// <param name="direction">The model's direction relative to that axis; <see langword="null"/> for a two-way camera.</param>
+    /// <returns>The compass heading, 0..360; <see langword="null"/> when either is unknown.</returns>
+    internal static double? Facing(
+        double? nodeFacing,
+        double? direction) =>
+        nodeFacing is { } node && direction is { } turn ? CameraModels.Normalize(node + turn) : null;
 
     /// <summary>
     /// The compass heading of a node's forward axis: the node quaternion is a yaw about +Y, and the

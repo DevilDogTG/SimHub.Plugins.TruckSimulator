@@ -1,4 +1,5 @@
 using System.Buffers.Binary;
+using System.Numerics;
 using System.Text;
 using DevDogs.TruckSimulator.DataTools.Cameras;
 using DevDogs.TruckSimulator.DataTools.Scs;
@@ -77,13 +78,115 @@ public class CameraExtractionTests
     }
 
     [Fact]
-    public void PmgLocators_ReadsHookupNames()
+    public void PmgLocators_ReadsHookupPositionAndRotation()
     {
-        var pmg = Pmg(("speedcam", "speedcam.20"), ("light", null));
+        PmgLocator[] written =
+        [
+            new("speedcam", "speedcam.20", new Vector3(7.24f, 0f, 5.82f), new Quaternion(0f, -0.7071f, 0f, 0.7071f)),
+            new("light", null, new Vector3(-1f, 2.5f, 0f), Quaternion.Identity),
+        ];
 
-        var locators = PmgLocators.Read(pmg);
+        var locators = PmgLocators.Read(Pmg(written));
 
-        locators.Should().Equal(new PmgLocator("speedcam", "speedcam.20"), new PmgLocator("light", null));
+        locators.Should().Equal(written);
+    }
+
+    [Fact]
+    public void ReversedHookups_ReadsReverseDirectionFromTheGamesHookupFile()
+    {
+        // unit/hookup/speed_camera.sii, ETS2 1.61.1.9.
+        const string sii = """
+            SiiNunit
+            {
+
+            speed_camera: speedcam.20
+            {
+            	trigger_distance: 8.0
+            	measurement_distance: 20.0
+            }
+            speed_camera: speedcam.r
+            {
+            	trigger_distance: 8.0
+            	measurement_distance: 20.0
+            	reverse_direction: true
+            }
+            speed_camera: speedcam.toll
+            {
+            	trigger_distance: 8.0
+            	measurement_distance: 0.0
+            }
+            }
+            """;
+
+        var reversed = CameraModels.ReversedHookups(sii);
+
+        reversed.Should().BeEquivalentTo("speedcam.r");
+    }
+
+    /// <summary>Camera locators of real ETS2 1.61.1.9 models: quaternion w and y, hookup.</summary>
+    [Theory]
+    [InlineData(0f, 1f, "speedcam.20", 0.0)]           // speed_camera_ch (Berlin fines): locator turned round, enforces the node's way
+    [InlineData(1f, 0f, "speedcam.20", 180.0)]         // speedcamera_01_fi: built facing the other way (Kouvola report)
+    [InlineData(1f, 0f, "speedcam.r", 0.0)]            // speedcamera_hw_uk2: reverse hookup
+    [InlineData(0f, 1f, "speedcam.r", 180.0)]          // speed_camera_02_be: reverse hookup, locator turned round
+    [InlineData(0.7071f, -0.7071f, "speedcam.20", 270.0)] // speedcamera_01_es_ibe: built side-on
+    [InlineData(0.7071f, 0.7071f, "speedcam.r", 270.0)]   // speedcamera_small_02_orange_it
+    public void Direction_LocatorYawAndHookup_GiveEnforcedDirectionRelativeToNode(
+        float w,
+        float y,
+        string hookup,
+        double expected)
+    {
+        var direction = CameraModels.Direction([Locator(hookup, w, y)], Reversed);
+
+        direction.Should().BeApproximately(expected, 0.1);
+    }
+
+    [Fact]
+    public void Direction_LocatorsInOppositeDirections_IsTwoWay()
+    {
+        // speedcamera_hw_dk: one locator each side of the road, turned opposite ways.
+        var direction = CameraModels.Direction([Locator("speedcam.20", 1f, 0f), Locator("speedcam.20", 0f, 1f)], Reversed);
+
+        direction.Should().BeNull();
+    }
+
+    [Fact]
+    public void Direction_SeveralLocatorsSameDirection_IsThatDirection()
+    {
+        // speedcamera_v01_gr: three locators, all turned round (0.003 rad apart at most).
+        var direction = CameraModels.Direction(
+            [Locator("speedcam.20", 0f, 1f), Locator("speedcam.20", 0.003f, 1f), Locator("speedcam.r", 1f, 0f)],
+            Reversed);
+
+        direction.Should().BeApproximately(0.0, 0.5);
+    }
+
+    [Theory]
+    [InlineData(338.6, 0.0, 338.6)]     // Erfurt hw_ch pair, game data kept (median-mounted, owner check 2026-11-01)
+    [InlineData(249.2, 180.0, 69.2)]
+    [InlineData(350.0, 20.0, 10.0)]     // wraps past north
+    [InlineData(180.0, 180.0, 0.0)]     // 360 -> 0
+    public void Facing_TurnsNodeHeadingByModelDirection(
+        double node,
+        double direction,
+        double expected)
+    {
+        var facing = MapCameras.Facing(node, direction);
+
+        facing.Should().BeApproximately(expected, 0.05);
+    }
+
+    [Theory]
+    [InlineData(null, 0.0)]
+    [InlineData(90.0, null)]
+    public void Facing_UnknownNodeOrTwoWayCamera_IsEmpty(
+        double? node,
+        double? direction)
+    {
+        var facing = MapCameras.Facing(node, direction);
+
+        facing.Should().BeNull();
     }
 
     [Fact]
@@ -165,8 +268,16 @@ public class CameraExtractionTests
         return record;
     }
 
+    private static readonly IReadOnlySet<string> Reversed = new HashSet<string> { "speedcam.r" };
+
+    /// <summary>A camera locator turned about +Y by the quaternion's w and y.</summary>
+    private static PmgLocator Locator(
+        string hookup,
+        float w,
+        float y) => new("speedcam", hookup, Vector3.Zero, new Quaternion(0f, y, 0f, w));
+
     /// <summary>A minimal PMG 0x15: header, locator table, string pool.</summary>
-    private static byte[] Pmg(params (string Name, string? Hookup)[] locators)
+    private static byte[] Pmg(params PmgLocator[] locators)
     {
         const int header = 112;
         var strings = new MemoryStream();
@@ -175,6 +286,13 @@ public class CameraExtractionTests
         {
             var entry = table.AsSpan(i * 44);
             BinaryPrimitives.WriteUInt64LittleEndian(entry, ScsToken.Encode(locators[i].Name));
+            var (position, rotation) = (locators[i].Position, locators[i].Rotation);
+            float[] values = [position.X, position.Y, position.Z, 1f, rotation.W, rotation.X, rotation.Y, rotation.Z];
+            for (var v = 0; v < values.Length; v++)
+            {
+                BinaryPrimitives.WriteSingleLittleEndian(entry[(8 + v * 4)..], values[v]);
+            }
+
             var hookupAt = -1;
             if (locators[i].Hookup is { } hookup)
             {

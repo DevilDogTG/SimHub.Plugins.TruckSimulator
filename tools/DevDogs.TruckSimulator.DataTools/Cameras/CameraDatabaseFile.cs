@@ -40,8 +40,9 @@ internal static class CameraDatabaseFile
             ["source"] = "DevDogs.TruckSimulator tools/DevDogs.TruckSimulator.DataTools (cameras)",
             ["columns"] = Columns,
             ["coordinates"] = "world space, metres - same as SCS telemetry truck.world.placement",
-            ["facing"] = "compass degrees of the sign node's forward axis = travel direction the camera enforces "
-                + "(0 = -Z north, 90 = +X east); empty when the node wasn't found",
+            ["facing"] = "compass degrees of the travel direction the camera enforces: the sign node's forward axis "
+                + "turned by the model's speedcam locator (its yaw, and reverse_direction of its hookup) "
+                + "(0 = -Z north, 90 = +X east); empty when the node wasn't found or the camera enforces both directions",
         };
         // Relaxed escaping keeps ' and + readable; the file is metadata read by people and the plugin,
         // never embedded in HTML, so HTML-safe escaping buys nothing.

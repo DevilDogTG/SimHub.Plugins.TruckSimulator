@@ -109,7 +109,9 @@ public class CameraDatabaseTests
     [InlineData("2cb3e39825cd0006", 159.6)]
     [InlineData("60c754de8c870001", 258.0)] // Belgium speed_camera_02_be pair: reverse-direction hookup
     [InlineData("60c754f2ef870000", 75.8)]
-    [InlineData("01567d2460500f89", 37.7)]  // Italy speedcamera_small_01_it: built side-on
+    [InlineData("01567d2460500f89", 217.7)] // Italy speedcamera_small_01_it: built side-on, hookup corrected
+    [InlineData("21f217b4504d0000", 240.8)] // Italy small_01_it pair at the toll section: the truck's side (owner report)
+    [InlineData("21f2174476cd0001", 59.2)]  // ... and the camera across the road
     public void LoadEmbedded_Ets2_KnownCamerasFaceTheEnforcedDirection(
         string uid,
         double facing)

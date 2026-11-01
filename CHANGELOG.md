@@ -2,6 +2,13 @@
 
 All notable changes to this project. Versions follow [semantic versioning](https://semver.org/).
 
+## [1.0.1] - Unreleased
+
+### Fixed
+- Speed-camera radar: the 32 small roadside cameras on Italian motorways (`speedcamera_small_01_it`)
+  were 180° off. With "Only cameras facing my direction" on, the radar alerted for the camera across
+  the road and stayed silent for the one on your side.
+
 ## [1.0.0] - 2026-11-01
 
 First stable release. From here on, versions are major (breaking property changes), minor (features)

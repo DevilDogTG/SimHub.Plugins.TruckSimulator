@@ -79,10 +79,44 @@ public class CameraDatabaseTests
         var database = CameraDatabase.LoadEmbedded(TruckGame.Ets2);
 
         database.Should().NotBeNull();
-        database!.GameVersion.Should().Be("1.61.1.1");
+        database!.GameVersion.Should().Be("1.61.1.9");
         database.Cameras.Should().HaveCount(707);
-        database.Cameras.Should().OnlyContain(c => c.Facing != null);
         database.Cameras.Count(c => c.X is > 8500 and < 13500 && c.Z is > -11500 and < -8000).Should().BeGreaterThanOrEqualTo(20);
+    }
+
+    [Fact]
+    public void LoadEmbedded_Ets2_OnlyTwoWayCamerasHaveNoFacing()
+    {
+        string[] twoWay =
+        [
+            "r1_speedcamera_var1_ru", "rs_speed_camera_hw", "speed_camera_01_lu_lux", "speedcamera_hw_3lane_fr",
+            "speedcamera_hw_dk", "speedcamera_hw_fr", "speedcamera_r1_tr",
+        ];
+
+        var database = CameraDatabase.LoadEmbedded(TruckGame.Ets2)!;
+
+        database.Cameras.Where(c => c.Facing is null).Select(c => c.Model).Distinct().Should().BeEquivalentTo(twoWay);
+        database.Cameras.Where(c => twoWay.Contains(c.Model)).Should().OnlyContain(c => c.Facing == null);
+    }
+
+    /// <summary>Facings checked against the game: fines, the owner's reports and in-game checks.</summary>
+    [Theory]
+    [InlineData("580b2d100ba60000", 249.2)] // Berlin speed_camera_ch: fined driving 249° (ADR-0005)
+    [InlineData("580b28fe81260001", 85.8)]  // Berlin speed_camera_ch: never fined driving the other way
+    [InlineData("299b948838c1000e", 266.4)] // Finland speedcamera_01_fi pair: built facing the other way (Kouvola report)
+    [InlineData("299b9488db41000d", 86.4)]
+    [InlineData("2cb3e398064d0003", 338.6)] // Erfurt speedcamera_hw_ch pair, back-to-back in the median (owner check)
+    [InlineData("2cb3e39825cd0006", 159.6)]
+    [InlineData("60c754de8c870001", 258.0)] // Belgium speed_camera_02_be pair: reverse-direction hookup
+    [InlineData("60c754f2ef870000", 75.8)]
+    [InlineData("01567d2460500f89", 37.7)]  // Italy speedcamera_small_01_it: built side-on
+    public void LoadEmbedded_Ets2_KnownCamerasFaceTheEnforcedDirection(
+        string uid,
+        double facing)
+    {
+        var database = CameraDatabase.LoadEmbedded(TruckGame.Ets2)!;
+
+        database.Cameras.Single(c => c.Uid == uid).Facing.Should().Be(facing);
     }
 
     [Theory]

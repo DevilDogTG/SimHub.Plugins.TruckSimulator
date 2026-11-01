@@ -84,7 +84,8 @@ Translated names are not included yet; these properties show the names the game 
 
 ### Speed-camera radar (ETS2)
 Warns when a fining speed camera is ahead. Cameras come from the game's map (707 in ETS2 1.61); a camera
-counts only when it faces your direction of travel, because that is the only traffic it fines. In real
+counts only when it faces your direction of travel, because that is the only traffic it fines (cameras
+that fine both directions count from either side). In real
 drives the game fined about 25 m before the camera, so the default 350 m alert gives plenty of warning.
 
 | Property | Type | Meaning |

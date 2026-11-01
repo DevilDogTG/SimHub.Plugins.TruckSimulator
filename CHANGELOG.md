@@ -2,6 +2,26 @@
 
 All notable changes to this project. Versions follow [semantic versioning](https://semver.org/).
 
+## [1.0.0] - Unreleased
+
+First stable release. From here on, versions are major (breaking property changes), minor (features)
+and patch (fixes and data updates).
+
+### Fixed
+- Speed-camera radar: cameras built facing the other way no longer swap with the camera across the
+  road. With "Only cameras facing my direction" on, a camera could fine you with no alert while the
+  radar showed the camera for the other carriageway (Finland, Lithuania, Belgium, the UK and Italian
+  motorways: 124 cameras).
+- Speed-camera radar: 85 cameras built side-on (Italy, Spain, Portugal, Estonia) were 90° off and never
+  alerted with the facing filter on.
+- Speed-camera radar: cameras that fine both directions (Denmark and France motorways, Serbia, Russia,
+  Luxembourg, Turkey: 19 cameras) now alert from either side.
+
+### Changed
+- Camera database rebuilt for ETS2 1.61.1.9 (same 707 cameras). The data tool takes each camera's
+  facing from the model's camera locator and the game's hookup definitions, not only the sign's
+  orientation (ADR-0005 update).
+
 ## [0.1.0] - 2026-10-11
 
 First release: a rebuild of sjdawson's TruckSimulatorPlugin for SimHub 9.x, built with the .NET 10 SDK.

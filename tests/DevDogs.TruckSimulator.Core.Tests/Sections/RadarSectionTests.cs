@@ -150,7 +150,7 @@ public class RadarSectionTests
         var (host, _) = DriveThroughBerlin(new PluginSettings());
 
         host.Properties.Should().Contain(RadarSection.DebugCamerasLoaded, 707);
-        host.Properties.Should().Contain(RadarSection.DebugGameVersion, "1.61.1.1");
+        host.Properties.Should().Contain(RadarSection.DebugGameVersion, "1.61.1.9");
         var radians = _berlinCamera.Facing!.Value * Math.PI / 180;
         ((double)host.Properties[RadarSection.DebugTruckX]).Should().BeApproximately(_berlinCamera.X + (200 * Math.Sin(radians)), 0.01);
         ((double)host.Properties[RadarSection.DebugTruckZ]).Should().BeApproximately(_berlinCamera.Z - (200 * Math.Cos(radians)), 0.01);

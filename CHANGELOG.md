@@ -2,7 +2,7 @@
 
 All notable changes to this project. Versions follow [semantic versioning](https://semver.org/).
 
-## [1.0.1] - Unreleased
+## [1.0.1] - 2026-11-01
 
 ### Fixed
 - Speed-camera radar: the 32 small roadside cameras on Italian motorways (`speedcamera_small_01_it`)

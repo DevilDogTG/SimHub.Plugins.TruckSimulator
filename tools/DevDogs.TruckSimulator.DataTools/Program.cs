@@ -13,7 +13,7 @@ internal static class Program
 {
     private const string Usage = """
         usage: dotnet run --project tools/DevDogs.TruckSimulator.DataTools -- cameras
-                 --base <extracted game root, e.g. ...\Extracted\base\1.61.1.1>
+                 --base <extracted game root, e.g. ...\Extracted\base\1.61.1.9>
                  --game ets2|ats
                  --out <folder, e.g. src/DevDogs.TruckSimulator.Core/Radar/Data/ets2>
                  [--game-version <version>]     default: the --base folder name

@@ -54,3 +54,14 @@ Checked against back-to-back camera pairs on the map, using each camera's trigge
 off and so never alerted with the facing filter on. Cameras are not always on the right of their
 carriageway: `speedcamera_hw_ch` stands back-to-back in the median (owner's in-game check at Erfurt), so
 no side-of-road rule is enforced; the tests pin known facings instead.
+
+## Update 2026-11-01 (1.0.1): per-model corrections where the hookup contradicts the placement
+`speedcamera_small_01_it` came out 180° off: in Italy the radar alerted for the camera across the road
+and not for the one on the truck's side (owner report, toll section near 6.7k / 28.5k). Its `speedcam.20`
+locator (19.96, 0, 7.00, yaw 90°) puts every one of its 32 placed cameras' trigger points on the other
+carriageway, while `speedcamera_small_02_orange_it` has the same locator with `speedcam.r` and comes out
+right. No single rule makes both right (turning the locator yaw the other way breaks the orange, `_01_est`
+and `_01_es_ibe` models), so the tool keeps a short table of per-model turns (`CameraModels`), applied
+after the rule. Each entry needs in-game evidence; models the side-of-road check only suspects
+(`speedcamera_small_03_hw_it`, `_3way_hw_01_it`, `_3way_hw_02_it`, `_01_pt_ibe`) stay on the rule until
+checked in game.

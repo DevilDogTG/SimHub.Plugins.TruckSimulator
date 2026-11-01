@@ -50,6 +50,22 @@ internal static partial class CameraModels
     private const double SameDirectionDegrees = 5;
 
     /// <summary>
+    /// Turns, in degrees, for models whose camera hookup contradicts how the map places them, applied on
+    /// top of <see cref="Direction"/>. Keep this short: each entry needs in-game evidence.
+    /// </summary>
+    /// <remarks>
+    /// <c>speedcamera_small_01_it</c>: its <c>speedcam.20</c> locator puts every placed camera's trigger
+    /// point on the carriageway going the other way, while <c>speedcamera_small_02_orange_it</c> has the
+    /// same locator with <c>speedcam.r</c> and comes out right. In game (owner report 2026-11-01, Italian
+    /// toll section) the radar alerted for the camera across the road and not for the one on the truck's
+    /// side.
+    /// </remarks>
+    private static readonly Dictionary<string, double> DirectionCorrections = new(StringComparer.Ordinal)
+    {
+        ["model2/speedcamera/speedcamera_small_01_it"] = 180,
+    };
+
+    /// <summary>
     /// Scans an extracted game.
     /// </summary>
     /// <param name="baseDirectory">The extracted game root (containing <c>def</c>, <c>model</c>, <c>map</c>).</param>
@@ -88,7 +104,7 @@ internal static partial class CameraModels
                 .ToList();
             if (locators.Count > 0)
             {
-                cameras.Add(new CameraModel(model, signUnits, Direction(locators, reversed)));
+                cameras.Add(new CameraModel(model, signUnits, Corrected(model, Direction(locators, reversed))));
             }
         }
 
@@ -114,6 +130,17 @@ internal static partial class CameraModels
         var first = directions[0];
         return directions.All(d => AngleBetween(d, first) <= SameDirectionDegrees) ? first : null;
     }
+
+    /// <summary>
+    /// Applies a model's entry in <see cref="DirectionCorrections"/>, if any.
+    /// </summary>
+    /// <param name="model">The model path without extension.</param>
+    /// <param name="direction">The direction from the model's locators.</param>
+    /// <returns>The corrected direction; two-way (<see langword="null"/>) stays two-way.</returns>
+    internal static double? Corrected(
+        string model,
+        double? direction) =>
+        direction is { } d && DirectionCorrections.TryGetValue(model, out var turn) ? Normalize(d + turn) : direction;
 
     /// <summary>
     /// Reads which <c>speed_camera</c> hookups enforce the reverse direction.

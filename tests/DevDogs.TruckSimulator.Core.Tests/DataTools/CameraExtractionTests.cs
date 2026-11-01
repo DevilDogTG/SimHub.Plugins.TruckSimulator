@@ -163,6 +163,24 @@ public class CameraExtractionTests
     }
 
     [Theory]
+    [InlineData("model2/speedcamera/speedcamera_small_01_it", 90.0, 270.0)]        // its hookup contradicts its placement (Italy report)
+    [InlineData("model2/speedcamera/speedcamera_small_02_orange_it", 270.0, 270.0)] // same locator, reverse hookup: right as is
+    [InlineData("model/sign/traffic/ch/speed_camera_ch", 0.0, 0.0)]
+    public void Corrected_TurnsOnlyListedModels(
+        string model,
+        double direction,
+        double expected)
+    {
+        CameraModels.Corrected(model, direction).Should().Be(expected);
+    }
+
+    [Fact]
+    public void Corrected_TwoWayCamera_StaysTwoWay()
+    {
+        CameraModels.Corrected("model2/speedcamera/speedcamera_small_01_it", null).Should().BeNull();
+    }
+
+    [Theory]
     [InlineData(338.6, 0.0, 338.6)]     // Erfurt hw_ch pair, game data kept (median-mounted, owner check 2026-11-01)
     [InlineData(249.2, 180.0, 69.2)]
     [InlineData(350.0, 20.0, 10.0)]     // wraps past north

@@ -2,7 +2,7 @@
 
 All notable changes to this project. Versions follow [semantic versioning](https://semver.org/).
 
-## [Unreleased]
+## [1.1.0] - 2026-11-07
 
 ### Added
 - Radar for ATS: the 5 fining speed cameras and the 16 police speed traps (parked police cars that

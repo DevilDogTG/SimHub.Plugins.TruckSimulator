@@ -82,18 +82,21 @@ Every name below is prefixed with `DDTruckPlugin.`, for example `DDTruckPlugin.J
 
 Translated names are not included yet; these properties show the names the game reports.
 
-### Speed-camera radar (ETS2)
-Warns when a fining speed camera is ahead. Cameras come from the game's map (707 in ETS2 1.61); a camera
+### Speed-camera radar (ETS2 and ATS)
+Warns when a fining speed camera, or in ATS a police speed trap, is ahead. Both come from the game's map
+(ETS2 1.61: 707 cameras; ATS 1.61: 5 cameras and 16 parked police cars that check your speed). A camera
 counts only when it faces your direction of travel, because that is the only traffic it fines (cameras
-that fine both directions count from either side). In real
+that fine both directions, and police traps, count from either side). In real
 drives the game fined about 25 m before the camera, so the default 350 m alert gives plenty of warning.
 
 | Property | Type | Meaning |
 |---|---|---|
-| `Radar.CameraAhead` | bool | A camera facing your direction is ahead within the alert distance and cone. |
+| `Radar.CameraAhead` | bool | A camera facing your direction, or a police trap, is ahead within the alert distance and cone. |
+| `Radar.Kind` | text | What is ahead: `Camera` or `Trap`; empty when none. |
+| `Radar.TrapAhead` | bool | The alert is for a police speed trap (ATS). |
 | `Radar.Distance` | number | Distance to it: metres (metric) or miles (imperial); 0 when none. |
 | `Radar.DistanceMeters` | number | Distance to it in metres, whatever the unit setting. |
-| `Radar.CameraModel` | text | The camera model, for example `speed_camera_ch`. |
+| `Radar.CameraModel` | text | The camera or trap model, for example `speed_camera_ch` or `police_sc`. |
 | `Radar.OverSpeed` | bool | A camera is ahead and you are above the limit plus the over-speed margin. |
 | `Radar.Debug.*` | | Cameras loaded, database game version, truck X/Z, nearest camera (any direction) with distance, model and facing angle, alert counters. |
 
@@ -112,7 +115,7 @@ alert through pauses. Example dashboard: `examples/dashboards/DDTruck Radar Test
 | `DamageIncrease` | Average wear rose by more than one percentage point (not on start-up). |
 | `JobTaken`, `JobLoading`, `JobOngoing`, `JobCompleted`, `JobAbandoned` | `Job.Status` changes. |
 | `JobReset` | The `JobStatusReset` action ran. |
-| `RadarCameraAhead` / `RadarCameraPassed` | A camera came into the alert zone / was passed or left behind. |
+| `RadarCameraAhead` / `RadarCameraPassed` | A camera or police trap came into the alert zone / was passed or left behind. |
 
 | Action | Does |
 |---|---|
@@ -143,10 +146,11 @@ dotnet test -c Release
 ```
 
 The speed-camera database is generated from an extracted game (the extraction must include the sign
-models' `.pmg` files):
+and world models' `.pmg` files):
 
 ```powershell
 dotnet run --project tools/DevDogs.TruckSimulator.DataTools -- cameras --base <extracted game root> --game ets2 --out src/DevDogs.TruckSimulator.Core/Radar/Data/ets2
+dotnet run --project tools/DevDogs.TruckSimulator.DataTools -- cameras --base <extracted game root> --game ats --out src/DevDogs.TruckSimulator.Core/Radar/Data/ats
 ```
 
 SimHub runs on .NET Framework 4.8, so the plugin targets `net48`; it is built and tested with the

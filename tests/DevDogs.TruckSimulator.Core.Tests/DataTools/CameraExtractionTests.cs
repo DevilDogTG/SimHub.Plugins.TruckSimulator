@@ -216,7 +216,7 @@ public class CameraExtractionTests
     }
 
     [Fact]
-    public void ParseSignUnits_FindsSignModelUnitsWithTheirModel()
+    public void ParseUnits_FindsSignAndModelUnitsWithTheirModelAndItemType()
     {
         const string sii = """
             SiiNunit
@@ -230,12 +230,76 @@ public class CameraExtractionTests
             {
              model_desc: "/model/sign/navigation/board.pmd"
             }
+            model_def : model.nm_474
+            {
+             model_desc: "/model/sign/speedcamera/speedcamera_pole.pmd"
+            }
             }
             """;
 
-        var units = CameraModels.ParseSignUnits(sii).ToList();
+        var units = CameraModels.ParseUnits(sii).ToList();
 
-        units.Should().Equal(("sign.ch_37007", "model/sign/traffic/ch/speed_camera_ch"));
+        units.Should().Equal(
+            (new PlacingUnit("sign.ch_37007", MapCameras.SignItemType), "model/sign/traffic/ch/speed_camera_ch"),
+            (new PlacingUnit("model.nm_474", MapCameras.ModelItemType), "model/sign/speedcamera/speedcamera_pole"));
+    }
+
+    [Fact]
+    public void Find_AtsLayout_FindsModelDefCameraAndPoliceTrap()
+    {
+        var game = Directory.CreateTempSubdirectory("ddtruck-cameras-");
+        try
+        {
+            Directory.CreateDirectory(Path.Combine(game.FullName, "def", "world"));
+            Directory.CreateDirectory(Path.Combine(game.FullName, "unit", "hookup"));
+            Directory.CreateDirectory(Path.Combine(game.FullName, "model", "sign", "speedcamera"));
+            File.WriteAllText(Path.Combine(game.FullName, "unit", "hookup", "speed_camera.sii"), """
+                SiiNunit
+                {
+                speed_camera: speedcam.11
+                {
+                	trigger_distance: 14.0
+                }
+                }
+                """);
+            File.WriteAllText(Path.Combine(game.FullName, "def", "world", "model.sii"), """
+                SiiNunit
+                {
+                model_def : model.225
+                {
+                	model_desc: "/model/sign/speedcamera/police_sc.pmd"
+                }
+                model_def : model.nm_474
+                {
+                	model_desc: "/model/sign/speedcamera/speedcamera_pole.pmd"
+                }
+                model_def : model.tree
+                {
+                	model_desc: "/model/sign/speedcamera/tree.pmd"
+                }
+                }
+                """);
+            var folder = Path.Combine(game.FullName, "model", "sign", "speedcamera");
+            File.WriteAllBytes(Path.Combine(folder, "police_sc.pmg"), Pmg(
+                Locator("police.always.parked.physics.driver", 1f, 0f),
+                Locator("police_car.basic", 1f, 0f)));
+            File.WriteAllBytes(Path.Combine(folder, "speedcamera_pole.pmg"), Pmg(Locator("speedcam.11", 0f, 1f)));
+            File.WriteAllBytes(Path.Combine(folder, "tree.pmg"), Pmg(Locator("lamp", 1f, 0f)));
+
+            var scan = CameraModels.Find(game.FullName);
+
+            scan.Models.Should().Be(3);
+            scan.ModelsRead.Should().Be(3);
+            scan.Cameras.Should().BeEquivalentTo(new[]
+            {
+                new CameraModel("model/sign/speedcamera/police_sc", [new PlacingUnit("model.225", MapCameras.ModelItemType)], null, CameraKind.Trap),
+                new CameraModel("model/sign/speedcamera/speedcamera_pole", [new PlacingUnit("model.nm_474", MapCameras.ModelItemType)], 0.0),
+            });
+        }
+        finally
+        {
+            game.Delete(recursive: true);
+        }
     }
 
     [Theory]
@@ -252,20 +316,22 @@ public class CameraExtractionTests
     }
 
     [Fact]
-    public void ToCsv_WritesFacingColumnAndEmptyWhenUnknown()
+    public void ToCsv_WritesFacingEmptyWhenUnknownAndKind()
     {
         MapCamera[] cameras =
         [
             new(0x580b28fe81260001, 10515.47, 44.14, -8840.42, "sign.ch_37007", "speed_camera_ch", "sec+0002-0003", 85.8),
             new(0x1, 1, 2, 3, "sign.x", "cam", "sec+0000+0000", null),
+            new(0x2, 4, 5, 6, "model.225", "police_sc", "sec+0000+0008", null, CameraKind.Trap),
         ];
 
         var csv = CameraDatabaseFile.ToCsv(cameras);
 
         csv.Should().Be(
-            "uid,x,y,z,unit,model,sector,facing\n"
-            + "580b28fe81260001,10515.47,44.14,-8840.42,sign.ch_37007,speed_camera_ch,sec+0002-0003,85.8\n"
-            + "0000000000000001,1.0,2.0,3.0,sign.x,cam,sec+0000+0000,\n");
+            "uid,x,y,z,unit,model,sector,facing,kind\n"
+            + "580b28fe81260001,10515.47,44.14,-8840.42,sign.ch_37007,speed_camera_ch,sec+0002-0003,85.8,camera\n"
+            + "0000000000000001,1.0,2.0,3.0,sign.x,cam,sec+0000+0000,,camera\n"
+            + "0000000000000002,4.0,5.0,6.0,model.225,police_sc,sec+0000+0008,,trap\n");
     }
 
     private static byte[] NodeRecord(
@@ -288,7 +354,7 @@ public class CameraExtractionTests
 
     private static readonly IReadOnlySet<string> Reversed = new HashSet<string> { "speedcam.r" };
 
-    /// <summary>A camera locator turned about +Y by the quaternion's w and y.</summary>
+    /// <summary>A locator turned about +Y by the quaternion's w and y.</summary>
     private static PmgLocator Locator(
         string hookup,
         float w,

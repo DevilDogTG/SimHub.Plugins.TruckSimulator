@@ -65,3 +65,19 @@ and `_01_es_ibe` models), so the tool keeps a short table of per-model turns (`C
 after the rule. Each entry needs in-game evidence; models the side-of-road check only suspects
 (`speedcamera_small_03_hw_it`, `_3way_hw_01_it`, `_3way_hw_02_it`, `_01_pt_ibe`) stay on the rule until
 checked in game.
+
+## Update 2026-11-03 (1.1.0): ATS cameras and police speed traps
+ATS places its cameras as **model items** (map item type 5, `model_def` units in `def/world/model*.sii`),
+not sign items, so the tool now takes candidates from both and checks each unit's own item type (unit
+names repeat across classes: `sign.226` and `model.226` share the token `226`). A model item's node
+follows its variant, look and extra-part tokens (`u64 model | u64 variant | u64 look | u32 parts |
+u64 part[] | u64 node`). ATS also fines with parked police cars: a model with a `police_car.*` hookup and
+no camera hookup is a **trap** (ATS 1.61.3.1: `police_sc`, 16 placed). Its hookup is a 60° field of view
+from a parked car, not a travel direction, so traps have no facing and alert from either side. The CSV
+gains a `kind` column (`camera` / `trap`), read by name, so the ETS2 database (no `kind`) loads as all
+cameras and was not regenerated: scanning ETS2's ~9,400 world models needs their `.pmg` files extracted
+first.
+
+ATS 1.61.3.1 has 5 placed cameras, all `speedcamera_pole` (one `speedcam.11` locator, yaw 0), so by the
+rule each enforces its node heading + 180°. Four stand in pairs at junctions, the two of a pair facing
+different approaches; the facings await an in-game check.

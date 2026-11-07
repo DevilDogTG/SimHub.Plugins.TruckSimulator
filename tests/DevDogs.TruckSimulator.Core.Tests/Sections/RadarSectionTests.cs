@@ -104,6 +104,43 @@ public class RadarSectionTests
 
         ((double)first[RadarSection.Distance]).Should().BeInRange(340, 350);
         first[RadarSection.CameraModel].Should().Be(_berlinCamera.Model);
+        first[RadarSection.Kind].Should().Be("Camera");
+        first[RadarSection.TrapAhead].Should().Be(false);
+    }
+
+    [Theory]
+    [InlineData(0.0)]
+    [InlineData(180.0)]
+    public void DriveThrough_AtsPoliceTrap_AlertsFromEitherSideAsTrap(double heading)
+    {
+        // A parked police car has no enforced direction (empty facing), so the facing filter lets it
+        // alert both ways.
+        var trap = CameraDatabase.LoadEmbedded(TruckGame.Ats)!.Cameras.First(c => c.Kind == SpeedCameraKind.Trap);
+        var radians = heading * Math.PI / 180;
+        var (dirX, dirZ) = (Math.Sin(radians), -Math.Cos(radians));
+        var host = new FakeSectionHost();
+        var section = new RadarSection(new PluginSettings(), CameraDatabase.LoadEmbedded);
+        section.Register(host);
+        var alerting = new List<Dictionary<string, object>>();
+
+        for (var s = -400.0; s <= 0; s += 0.25)
+        {
+            var telemetry = new TruckTelemetry
+            {
+                Game = TruckGame.Ats,
+                Truck = new TruckState { Position = new WorldPosition { X = trap.X + (s * dirX), Y = trap.Y, Z = trap.Z + (s * dirZ) } },
+            };
+            section.Update(telemetry, _start.AddSeconds((s + 400) / 15), host);
+            if ((bool)host.Properties[RadarSection.CameraAhead])
+            {
+                alerting.Add(new Dictionary<string, object>(host.Properties));
+            }
+        }
+
+        alerting.Should().NotBeEmpty();
+        alerting.Last()[RadarSection.Kind].Should().Be("Trap");
+        alerting.Last()[RadarSection.TrapAhead].Should().Be(true);
+        alerting.Last()[RadarSection.CameraModel].Should().Be("police_sc");
     }
 
     [Fact]
@@ -137,7 +174,7 @@ public class RadarSectionTests
     [Fact]
     public void DriveThrough_GameWithoutDatabase_NeverAlertsAndReportsNoCameras()
     {
-        var (host, frames) = DriveThroughBerlin(new PluginSettings(), game: TruckGame.Ats);
+        var (host, frames) = DriveThroughBerlin(new PluginSettings(), game: TruckGame.Unknown);
 
         host.TriggeredEvents.Should().BeEmpty();
         frames.Should().OnlyContain(f => !(bool)f[RadarSection.CameraAhead]);

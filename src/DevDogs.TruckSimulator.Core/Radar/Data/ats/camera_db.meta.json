@@ -1,0 +1,21 @@
+{
+  "game": "ats",
+  "game_version": "1.61.3.1",
+  "cameras": 5,
+  "traps": 16,
+  "source": "DevDogs.TruckSimulator tools/DevDogs.TruckSimulator.DataTools (cameras)",
+  "columns": [
+    "uid",
+    "x",
+    "y",
+    "z",
+    "unit",
+    "model",
+    "sector",
+    "facing",
+    "kind"
+  ],
+  "coordinates": "world space, metres - same as SCS telemetry truck.world.placement",
+  "facing": "compass degrees of the travel direction the camera enforces: the item node's forward axis turned by the model's speedcam locator (its yaw, and reverse_direction of its hookup) (0 = -Z north, 90 = +X east); empty when the node wasn't found, the camera enforces both directions, or the row is a trap",
+  "kind": "camera: a fining speed camera (speedcam hookup); trap: a parked police car that checks speed (police_car hookup)"
+}

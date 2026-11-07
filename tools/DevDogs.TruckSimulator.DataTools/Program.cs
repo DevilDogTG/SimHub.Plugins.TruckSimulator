@@ -17,7 +17,7 @@ internal static class Program
                  --game ets2|ats
                  --out <folder, e.g. src/DevDogs.TruckSimulator.Core/Radar/Data/ets2>
                  [--game-version <version>]     default: the --base folder name
-                 [--allow-missing-models]       continue when sign model .pmg files aren't extracted
+                 [--allow-missing-models]       continue when sign or world model .pmg files aren't extracted
         """;
 
     /// <summary>
@@ -60,12 +60,13 @@ internal static class Program
         });
 
         var scan = CameraModels.Find(baseDirectory);
-        var missing = scan.SignModels - scan.ModelsRead;
-        Console.WriteLine($"{scan.Cameras.Count} camera models in {scan.ModelsRead} of {scan.SignModels} sign models read");
+        var missing = scan.Models - scan.ModelsRead;
+        var traps = scan.Cameras.Count(c => c.Kind == CameraKind.Trap);
+        Console.WriteLine($"{scan.Cameras.Count - traps} camera and {traps} trap models in {scan.ModelsRead} of {scan.Models} sign and world models read");
         if (missing > 0 && !options.ContainsKey("allow-missing-models"))
         {
             return Fail(
-                $"{missing} sign models have no .pmg in {baseDirectory}; a camera among them would be missed. "
+                $"{missing} sign and world models have no .pmg in {baseDirectory}; a camera among them would be missed. "
                 + "Extract their .pmg files, or pass --allow-missing-models to accept the result.");
         }
 
@@ -81,8 +82,9 @@ internal static class Program
         }
 
         CameraDatabaseFile.Write(output, game, gameVersion, cameras);
-        var withoutFacing = cameras.Count(c => c.Facing is null);
-        Console.WriteLine($"{cameras.Count} cameras placed on the map ({withoutFacing} without facing) -> {output}");
+        var placedTraps = cameras.Count(c => c.Kind == CameraKind.Trap);
+        var withoutFacing = cameras.Count(c => c.Kind == CameraKind.Camera && c.Facing is null);
+        Console.WriteLine($"{cameras.Count - placedTraps} cameras ({withoutFacing} without facing) and {placedTraps} traps placed on the map -> {output}");
         return 0;
     }
 

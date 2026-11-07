@@ -6,6 +6,7 @@ namespace DevDogs.TruckSimulator.Core.Tests.Radar;
 public class CameraDatabaseTests
 {
     private const string Ets2Meta = """{"game":"ets2","game_version":"1.61.1.1","cameras":2}""";
+    private const string AtsMeta = """{"game":"ats","game_version":"1.61.3.1","cameras":1,"traps":1}""";
 
     [Fact]
     public void Parse_ValidRows_ReadsCamerasAndVersion()
@@ -38,6 +39,20 @@ public class CameraDatabaseTests
     }
 
     [Fact]
+    public void Parse_KindColumn_ReadsTrapsAndCameras()
+    {
+        var csv = new StringReader("""
+            uid,x,y,z,unit,model,sector,facing,kind
+            1,1,2,3,model.nm_474,speedcamera_pole,sec+0000+0003,90.0,camera
+            2,4,5,6,model.225,police_sc,sec+0000+0008,,trap
+            """);
+
+        var database = CameraDatabase.Parse(TruckGame.Ats, AtsMeta, csv);
+
+        database.Cameras.Select(c => c.Kind).Should().Equal(SpeedCameraKind.Camera, SpeedCameraKind.Trap);
+    }
+
+    [Fact]
     public void Parse_NoFacingColumn_LoadsWithUnknownFacing()
     {
         var csv = new StringReader("""
@@ -48,6 +63,7 @@ public class CameraDatabaseTests
         var database = CameraDatabase.Parse(TruckGame.Ets2, Ets2Meta, csv);
 
         database.Cameras.Single().Facing.Should().BeNull();
+        database.Cameras.Single().Kind.Should().Be(SpeedCameraKind.Camera);
     }
 
     [Fact]
@@ -121,12 +137,31 @@ public class CameraDatabaseTests
         database.Cameras.Single(c => c.Uid == uid).Facing.Should().Be(facing);
     }
 
-    [Theory]
-    [InlineData(TruckGame.Ats)]
-    [InlineData(TruckGame.Unknown)]
-    public void LoadEmbedded_GameWithoutDatabase_ReturnsNull(TruckGame game)
+    [Fact]
+    public void LoadEmbedded_Ets2_HasNoTraps()
     {
-        var database = CameraDatabase.LoadEmbedded(game);
+        var database = CameraDatabase.LoadEmbedded(TruckGame.Ets2)!;
+
+        database.Cameras.Should().OnlyContain(c => c.Kind == SpeedCameraKind.Camera);
+    }
+
+    [Fact]
+    public void LoadEmbedded_Ats_HasCamerasAndPoliceTraps()
+    {
+        var database = CameraDatabase.LoadEmbedded(TruckGame.Ats);
+
+        database.Should().NotBeNull();
+        database!.GameVersion.Should().Be("1.61.3.1");
+        database.Cameras.Where(c => c.Kind == SpeedCameraKind.Camera).Should().HaveCount(5)
+            .And.OnlyContain(c => c.Model == "speedcamera_pole" && c.Facing != null);
+        database.Cameras.Where(c => c.Kind == SpeedCameraKind.Trap).Should().HaveCount(16)
+            .And.OnlyContain(c => c.Model == "police_sc" && c.Facing == null);
+    }
+
+    [Fact]
+    public void LoadEmbedded_GameWithoutDatabase_ReturnsNull()
+    {
+        var database = CameraDatabase.LoadEmbedded(TruckGame.Unknown);
 
         database.Should().BeNull();
     }

@@ -6,8 +6,8 @@ using DevDogs.TruckSimulator.Core.Telemetry;
 namespace DevDogs.TruckSimulator.Core.Sections;
 
 /// <summary>
-/// Warns when a fining speed camera is ahead of the truck. Cameras come from the database built
-/// into the plugin for the running game; a game without one simply never alerts.
+/// Warns when a fining speed camera or a police speed trap (ATS) is ahead of the truck. Both come from
+/// the database built into the plugin for the running game; a game without one simply never alerts.
 /// </summary>
 /// <param name="settings">Supplies the alert distance, cone angle, over-speed margin and display unit.</param>
 /// <param name="databases">Returns the camera database for a game, or <see langword="null"/> when there is none.</param>
@@ -15,8 +15,14 @@ public sealed class RadarSection(
     PluginSettings settings,
     Func<TruckGame, CameraDatabase?> databases) : ITelemetrySection
 {
-    /// <summary>Property: a camera is ahead within the alert distance and cone.</summary>
+    /// <summary>Property: a camera or a police speed trap is ahead within the alert distance and cone.</summary>
     public const string CameraAhead = "Radar.CameraAhead";
+
+    /// <summary>Property: what is ahead, <c>Camera</c> or <c>Trap</c>; empty when none.</summary>
+    public const string Kind = "Radar.Kind";
+
+    /// <summary>Property: the alert is for a police speed trap (a parked police car checking speed).</summary>
+    public const string TrapAhead = "Radar.TrapAhead";
 
     /// <summary>Property: distance to the camera ahead, in metres (metric) or miles (imperial); 0 when none.</summary>
     public const string Distance = "Radar.Distance";
@@ -24,7 +30,7 @@ public sealed class RadarSection(
     /// <summary>Property: distance to the camera ahead in metres, whatever the display unit; 0 when none.</summary>
     public const string DistanceMeters = "Radar.DistanceMeters";
 
-    /// <summary>Property: the camera model ahead, for example <c>speed_camera_ch</c>; empty when none.</summary>
+    /// <summary>Property: the camera or trap model ahead, for example <c>speed_camera_ch</c> or <c>police_sc</c>; empty when none.</summary>
     public const string CameraModel = "Radar.CameraModel";
 
     /// <summary>Property: a camera is ahead and the truck is above the speed limit plus the over-speed margin.</summary>
@@ -77,6 +83,8 @@ public sealed class RadarSection(
     public void Register(ISectionHost host)
     {
         host.AddProperty(CameraAhead, false);
+        host.AddProperty(Kind, "");
+        host.AddProperty(TrapAhead, false);
         host.AddProperty(Distance, 0d);
         host.AddProperty(DistanceMeters, 0d);
         host.AddProperty(CameraModel, "");
@@ -129,6 +137,8 @@ public sealed class RadarSection(
         var limit = telemetry.Navigation.SpeedLimitMph;
 
         output.SetProperty(CameraAhead, ahead);
+        output.SetProperty(Kind, camera?.Kind.ToString() ?? "");
+        output.SetProperty(TrapAhead, camera?.Kind == SpeedCameraKind.Trap);
         output.SetProperty(DistanceMeters, reading.Distance);
         output.SetProperty(Distance, settings.DashUnitMetric ? reading.Distance : reading.Distance / MetresPerMile);
         output.SetProperty(CameraModel, camera?.Model ?? "");

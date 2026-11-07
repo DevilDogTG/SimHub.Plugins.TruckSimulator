@@ -2,6 +2,18 @@
 
 All notable changes to this project. Versions follow [semantic versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+- Radar for ATS: the 5 fining speed cameras and the 16 police speed traps (parked police cars that
+  check your speed) on the ATS 1.61.3.1 map. Traps alert from either direction.
+- `Radar.Kind` (`Camera` / `Trap`) and `Radar.TrapAhead`, so dashboards can tell a police trap from a
+  camera. `Radar.CameraAhead` and the radar events fire for both.
+
+### Changed
+- The data tool also finds cameras and traps placed as world models (how ATS places them), and writes
+  a `kind` column. The ETS2 database is unchanged.
+
 ## [1.0.1] - 2026-11-01
 
 ### Fixed

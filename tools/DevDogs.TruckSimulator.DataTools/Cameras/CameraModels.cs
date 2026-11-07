@@ -8,41 +8,68 @@ using DevDogs.TruckSimulator.DataTools.Scs;
 namespace DevDogs.TruckSimulator.DataTools.Cameras;
 
 /// <summary>
-/// A sign model that is a fining speed camera.
+/// What a placed enforcement model is.
+/// </summary>
+internal enum CameraKind
+{
+    /// <summary>A fining speed camera (a <c>speedcam.*</c> hookup).</summary>
+    Camera,
+
+    /// <summary>A parked police car that checks speed (a <c>police_car.*</c> hookup), the ATS speed trap.</summary>
+    Trap,
+}
+
+/// <summary>
+/// A unit that places a model on the map.
+/// </summary>
+/// <param name="Name">The unit name, for example <c>sign.ch_37007</c> or <c>model.nm_474</c>.</param>
+/// <param name="ItemType">The map item type that places it: <see cref="MapCameras.SignItemType"/> or <see cref="MapCameras.ModelItemType"/>.</param>
+internal sealed record PlacingUnit(
+    string Name,
+    uint ItemType);
+
+/// <summary>
+/// A sign or world model that enforces speed: a fining speed camera or a police speed trap.
 /// </summary>
 /// <param name="Model">The model path without extension, for example <c>model/sign/traffic/ch/speed_camera_ch</c>.</param>
-/// <param name="SignUnits">The <c>sign_model</c> units that place it, for example <c>sign.ch_37007</c>.</param>
+/// <param name="Units">The <c>sign_model</c> and <c>model_def</c> units that place it, for example <c>sign.ch_37007</c>.</param>
 /// <param name="Direction">
-/// The travel direction the camera enforces, in degrees clockwise from the sign node's forward axis;
-/// <see langword="null"/> when its camera locators enforce more than one direction (a two-way camera).
+/// The travel direction the camera enforces, in degrees clockwise from the node's forward axis;
+/// <see langword="null"/> when its camera locators enforce more than one direction (a two-way camera),
+/// and for a trap.
 /// </param>
+/// <param name="Kind">Whether it is a camera or a police speed trap.</param>
 internal sealed record CameraModel(
     string Model,
-    IReadOnlyList<string> SignUnits,
-    double? Direction);
+    IReadOnlyList<PlacingUnit> Units,
+    double? Direction,
+    CameraKind Kind = CameraKind.Camera);
 
 /// <summary>
 /// The outcome of looking for camera models.
 /// </summary>
-/// <param name="Cameras">The camera models found.</param>
-/// <param name="SignModels">How many distinct sign models the game defines.</param>
+/// <param name="Cameras">The camera and trap models found.</param>
+/// <param name="Models">How many distinct sign and world models the game defines.</param>
 /// <param name="ModelsRead">How many of their <c>.pmg</c> files were on disk and read.</param>
 internal sealed record CameraModelScan(
     IReadOnlyList<CameraModel> Cameras,
-    int SignModels,
+    int Models,
     int ModelsRead);
 
 /// <summary>
-/// Finds the sign models that are fining speed cameras. The map places cameras as sign items, so the
-/// candidates are the models of the <c>sign_model</c> units in <c>def/world/sign*.sii</c>; a model is a
-/// camera when its <c>.pmg</c> has a <c>speedcam.*</c> hookup other than <c>speedcam.toll</c>
-/// (Scandinavian toll gates, not speed enforcement). Port of the DriveDogs Radar
-/// <c>tools/scan_cameras.py</c>, plus the direction each model enforces.
+/// Finds the models that enforce speed. ETS2 places cameras as sign items and ATS as model items, so
+/// the candidates are the models of the <c>sign_model</c> units in <c>def/world/sign*.sii</c> and of the
+/// <c>model_def</c> units in <c>def/world/model*.sii</c>. A model is a camera when its <c>.pmg</c> has a
+/// <c>speedcam.*</c> hookup other than <c>speedcam.toll</c> (Scandinavian toll gates, not speed
+/// enforcement), and a police speed trap when it has a <c>police_car.*</c> hookup instead (the parked
+/// police car that checks passing speeds, <c>unit/hookup/police_car.sii</c>). Port of the DriveDogs Radar
+/// <c>tools/scan_cameras.py</c>, plus the direction each camera enforces.
 /// </summary>
 internal static partial class CameraModels
 {
     private const string SpeedCameraHookupPrefix = "speedcam.";
     private const string TollHookup = "speedcam.toll";
+    private const string PoliceCarHookupPrefix = "police_car.";
 
     /// <summary>
     /// Locators of one model whose directions are within this many degrees enforce the same direction.
@@ -69,7 +96,7 @@ internal static partial class CameraModels
     /// Scans an extracted game.
     /// </summary>
     /// <param name="baseDirectory">The extracted game root (containing <c>def</c>, <c>model</c>, <c>map</c>).</param>
-    /// <returns>The camera models found, sorted by model path.</returns>
+    /// <returns>The camera and trap models found, sorted by model path.</returns>
     /// <exception cref="InvalidOperationException">The game defines no speed camera hookups.</exception>
     public static CameraModelScan Find(string baseDirectory)
     {
@@ -80,11 +107,11 @@ internal static partial class CameraModels
         }
 
         var reversed = ReversedHookups(File.ReadAllText(hookupFile));
-        var units = SignUnitsByModel(Path.Combine(baseDirectory, "def", "world"));
+        var units = UnitsByModel(Path.Combine(baseDirectory, "def", "world"));
         var cameras = new List<CameraModel>();
         var read = 0;
 
-        foreach (var (model, signUnits) in units.OrderBy(u => u.Key, StringComparer.Ordinal))
+        foreach (var (model, modelUnits) in units.OrderBy(u => u.Key, StringComparer.Ordinal))
         {
             var path = Path.Combine(baseDirectory, model + ".pmg");
             if (!File.Exists(path))
@@ -94,17 +121,23 @@ internal static partial class CameraModels
 
             read++;
             var bytes = File.ReadAllBytes(path);
-            if (bytes.AsSpan().IndexOf("speedcam."u8) < 0)
+            if (bytes.AsSpan().IndexOf("speedcam."u8) < 0 && bytes.AsSpan().IndexOf("police_car."u8) < 0)
             {
                 continue;
             }
 
-            var locators = PmgLocators.Read(bytes)
-                .Where(l => l.Hookup is { } h && h.StartsWith(SpeedCameraHookupPrefix, StringComparison.Ordinal) && h != TollHookup)
+            var hookups = PmgLocators.Read(bytes).Where(l => l.Hookup is not null).ToList();
+            var locators = hookups
+                .Where(l => l.Hookup!.StartsWith(SpeedCameraHookupPrefix, StringComparison.Ordinal) && l.Hookup != TollHookup)
                 .ToList();
             if (locators.Count > 0)
             {
-                cameras.Add(new CameraModel(model, signUnits, Corrected(model, Direction(locators, reversed))));
+                cameras.Add(new CameraModel(model, modelUnits, Corrected(model, Direction(locators, reversed))));
+            }
+            else if (hookups.Any(l => l.Hookup!.StartsWith(PoliceCarHookupPrefix, StringComparison.Ordinal)))
+            {
+                // A parked car watching a field of view, not a travel direction: it alerts from either side.
+                cameras.Add(new CameraModel(model, modelUnits, null, CameraKind.Trap));
             }
         }
 
@@ -179,18 +212,20 @@ internal static partial class CameraModels
     }
 
     /// <summary>
-    /// Reads which <c>sign_model</c> units use which model.
+    /// Reads which <c>sign_model</c> and <c>model_def</c> units use which model.
     /// </summary>
     /// <param name="worldDirectory">The <c>def/world</c> folder.</param>
-    /// <returns>Model path (no extension) to the unit names that place it.</returns>
-    internal static Dictionary<string, IReadOnlyList<string>> SignUnitsByModel(string worldDirectory)
+    /// <returns>Model path (no extension) to the units that place it.</returns>
+    internal static Dictionary<string, IReadOnlyList<PlacingUnit>> UnitsByModel(string worldDirectory)
     {
-        var byModel = new Dictionary<string, List<string>>(StringComparer.Ordinal);
-        var files = Directory.GetFiles(worldDirectory, "sign*.sii").OrderBy(f => f, StringComparer.Ordinal);
+        var byModel = new Dictionary<string, List<PlacingUnit>>(StringComparer.Ordinal);
+        var files = Directory.GetFiles(worldDirectory, "sign*.sii")
+            .Concat(Directory.GetFiles(worldDirectory, "model*.sii"))
+            .OrderBy(f => f, StringComparer.Ordinal);
 
         foreach (var file in files)
         {
-            foreach (var (unit, model) in ParseSignUnits(File.ReadAllText(file)))
+            foreach (var (unit, model) in ParseUnits(File.ReadAllText(file)))
             {
                 if (!byModel.TryGetValue(model, out var list))
                 {
@@ -201,28 +236,29 @@ internal static partial class CameraModels
             }
         }
 
-        return byModel.ToDictionary(e => e.Key, e => (IReadOnlyList<string>)e.Value, StringComparer.Ordinal);
+        return byModel.ToDictionary(e => e.Key, e => (IReadOnlyList<PlacingUnit>)e.Value, StringComparer.Ordinal);
     }
 
     /// <summary>
-    /// Extracts <c>sign_model</c> units and their model from SII text.
+    /// Extracts <c>sign_model</c> and <c>model_def</c> units and their model from SII text.
     /// </summary>
     /// <param name="sii">The SII file content.</param>
-    /// <returns>Each unit name with its model path (no extension, no leading slash).</returns>
-    internal static IEnumerable<(string Unit, string Model)> ParseSignUnits(string sii)
+    /// <returns>Each unit with its model path (no extension, no leading slash).</returns>
+    internal static IEnumerable<(PlacingUnit Unit, string Model)> ParseUnits(string sii)
     {
-        foreach (Match unit in SignUnitPattern().Matches(sii))
+        foreach (Match unit in UnitPattern().Matches(sii))
         {
-            var model = ModelDescPattern().Match(unit.Groups[2].Value);
+            var model = ModelDescPattern().Match(unit.Groups[3].Value);
             if (model.Success)
             {
-                yield return (unit.Groups[1].Value, model.Groups[1].Value);
+                var itemType = unit.Groups[1].Value == "sign_model" ? MapCameras.SignItemType : MapCameras.ModelItemType;
+                yield return (new PlacingUnit(unit.Groups[2].Value, itemType), model.Groups[1].Value);
             }
         }
     }
 
-    [GeneratedRegex(@"^\s*sign_model\s*:\s*([\w.]+)\s*\{(.*?)^\s*\}", RegexOptions.Multiline | RegexOptions.Singleline)]
-    private static partial Regex SignUnitPattern();
+    [GeneratedRegex(@"^\s*(sign_model|model_def)\s*:\s*([\w.]+)\s*\{(.*?)^\s*\}", RegexOptions.Multiline | RegexOptions.Singleline)]
+    private static partial Regex UnitPattern();
 
     [GeneratedRegex("model_desc\\s*:\\s*\"/?([^\"]+)\\.pmd\"")]
     private static partial Regex ModelDescPattern();

@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
@@ -14,7 +15,7 @@ namespace DevDogs.TruckSimulator.DataTools.Cameras;
 internal static class CameraDatabaseFile
 {
     /// <summary>The CSV columns, in order.</summary>
-    internal static readonly string[] Columns = ["uid", "x", "y", "z", "unit", "model", "sector", "facing"];
+    internal static readonly string[] Columns = ["uid", "x", "y", "z", "unit", "model", "sector", "facing", "kind"];
 
     /// <summary>
     /// Writes both files into a folder.
@@ -36,13 +37,17 @@ internal static class CameraDatabaseFile
         {
             ["game"] = game,
             ["game_version"] = gameVersion,
-            ["cameras"] = cameras.Count,
+            ["cameras"] = cameras.Count(c => c.Kind == CameraKind.Camera),
+            ["traps"] = cameras.Count(c => c.Kind == CameraKind.Trap),
             ["source"] = "DevDogs.TruckSimulator tools/DevDogs.TruckSimulator.DataTools (cameras)",
             ["columns"] = Columns,
             ["coordinates"] = "world space, metres - same as SCS telemetry truck.world.placement",
-            ["facing"] = "compass degrees of the travel direction the camera enforces: the sign node's forward axis "
+            ["facing"] = "compass degrees of the travel direction the camera enforces: the item node's forward axis "
                 + "turned by the model's speedcam locator (its yaw, and reverse_direction of its hookup) "
-                + "(0 = -Z north, 90 = +X east); empty when the node wasn't found or the camera enforces both directions",
+                + "(0 = -Z north, 90 = +X east); empty when the node wasn't found, the camera enforces both directions, "
+                + "or the row is a trap",
+            ["kind"] = "camera: a fining speed camera (speedcam hookup); trap: a parked police car that checks speed "
+                + "(police_car hookup)",
         };
         // Relaxed escaping keeps ' and + readable; the file is metadata read by people and the plugin,
         // never embedded in HTML, so HTML-safe escaping buys nothing.
@@ -68,7 +73,8 @@ internal static class CameraDatabaseFile
                 .Append(c.Unit).Append(',')
                 .Append(c.Model).Append(',')
                 .Append(c.Sector).Append(',')
-                .Append(c.Facing is { } facing ? Number(facing) : "")
+                .Append(c.Facing is { } facing ? Number(facing) : "").Append(',')
+                .Append(c.Kind == CameraKind.Trap ? "trap" : "camera")
                 .Append('\n');
         }
 

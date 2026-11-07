@@ -10,7 +10,19 @@ using Newtonsoft.Json;
 namespace DevDogs.TruckSimulator.Core.Radar;
 
 /// <summary>
-/// A fining speed camera placed on the map.
+/// What enforces the speed limit at a <see cref="SpeedCamera"/>.
+/// </summary>
+public enum SpeedCameraKind
+{
+    /// <summary>A fining speed camera.</summary>
+    Camera,
+
+    /// <summary>A parked police car that checks passing speeds (ATS speed trap).</summary>
+    Trap,
+}
+
+/// <summary>
+/// A fining speed camera or police speed trap placed on the map.
 /// </summary>
 /// <param name="Uid">The map item id.</param>
 /// <param name="X">World X, in metres (same space as the truck's telemetry position).</param>
@@ -19,18 +31,20 @@ namespace DevDogs.TruckSimulator.Core.Radar;
 /// <param name="Model">The camera model, for example <c>speed_camera_ch</c>.</param>
 /// <param name="Facing">
 /// The travel direction the camera enforces, as a compass heading in degrees (0 = -Z north, 90 = +X
-/// east); <see langword="null"/> when the database doesn't say.
+/// east); <see langword="null"/> when the database doesn't say or it enforces both directions.
 /// </param>
+/// <param name="Kind">Whether it is a camera or a police speed trap.</param>
 public sealed record SpeedCamera(
     string Uid,
     double X,
     double Y,
     double Z,
     string Model,
-    double? Facing = null);
+    double? Facing = null,
+    SpeedCameraKind Kind = SpeedCameraKind.Camera);
 
 /// <summary>
-/// The speed cameras of one game, extracted from that game's map for one game version.
+/// The speed cameras and police speed traps of one game, extracted from that game's map for one game version.
 /// </summary>
 /// <param name="Game">The game the cameras belong to.</param>
 /// <param name="GameVersion">The game version the map was extracted from, for example <c>1.61.1.1</c>.</param>
@@ -72,9 +86,10 @@ public sealed record CameraDatabase(
     }
 
     /// <summary>
-    /// Reads a database: the metadata JSON and the <c>uid,x,y,z,unit,model,sector[,facing]</c> CSV written
-    /// by <c>tools/DevDogs.TruckSimulator.DataTools</c>. The optional <c>facing</c> column is found by its
-    /// header name; databases without it load with unknown facing. Malformed rows are skipped.
+    /// Reads a database: the metadata JSON and the <c>uid,x,y,z,unit,model,sector[,facing][,kind]</c> CSV
+    /// written by <c>tools/DevDogs.TruckSimulator.DataTools</c>. The optional <c>facing</c> and <c>kind</c>
+    /// columns are found by their header name; databases without them load with unknown facing and as
+    /// cameras. Malformed rows are skipped.
     /// </summary>
     /// <param name="game">The game the database belongs to.</param>
     /// <param name="metaJson">The <c>camera_db.meta.json</c> content.</param>
@@ -93,7 +108,9 @@ public sealed record CameraDatabase(
         }
 
         var cameras = new List<SpeedCamera>();
-        var facingColumn = Array.IndexOf((csv.ReadLine() ?? "").Split(','), "facing");
+        var header = (csv.ReadLine() ?? "").Split(',');
+        var facingColumn = Array.IndexOf(header, "facing");
+        var kindColumn = Array.IndexOf(header, "kind");
         while (csv.ReadLine() is { } line)
         {
             var cells = line.Split(',');
@@ -105,7 +122,10 @@ public sealed record CameraDatabase(
                 double? facing = facingColumn >= 0 && facingColumn < cells.Length && TryParse(cells[facingColumn], out var f)
                     ? f
                     : null;
-                cameras.Add(new SpeedCamera(cells[0], x, y, z, cells[5], facing));
+                var kind = kindColumn >= 0 && kindColumn < cells.Length && cells[kindColumn] == "trap"
+                    ? SpeedCameraKind.Trap
+                    : SpeedCameraKind.Camera;
+                cameras.Add(new SpeedCamera(cells[0], x, y, z, cells[5], facing, kind));
             }
         }
 

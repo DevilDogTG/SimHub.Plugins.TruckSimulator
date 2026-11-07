@@ -8,20 +8,21 @@ using DevDogs.TruckSimulator.DataTools.Scs;
 namespace DevDogs.TruckSimulator.DataTools.Cameras;
 
 /// <summary>
-/// A speed camera placed on the map.
+/// A speed camera or police speed trap placed on the map.
 /// </summary>
-/// <param name="Uid">The sign item id.</param>
+/// <param name="Uid">The sign or model item id.</param>
 /// <param name="X">World X, in metres (centre of the item's bounding box).</param>
 /// <param name="Y">World Y (height), in metres.</param>
 /// <param name="Z">World Z, in metres.</param>
-/// <param name="Unit">The sign unit, for example <c>sign.ch_37007</c>.</param>
+/// <param name="Unit">The sign or model unit, for example <c>sign.ch_37007</c>.</param>
 /// <param name="Model">The model name, for example <c>speed_camera_ch</c>.</param>
 /// <param name="Sector">The map sector, for example <c>sec+0002-0003</c>.</param>
 /// <param name="Facing">
-/// Compass heading of the travel direction the camera enforces: the sign node's forward axis turned by
+/// Compass heading of the travel direction the camera enforces: the item node's forward axis turned by
 /// the model's <see cref="CameraModel.Direction"/> (0 = -Z north, 90 = +X east); <see langword="null"/>
-/// when the node wasn't found or the camera enforces both directions.
+/// when the node wasn't found, the camera enforces both directions, or it is a trap.
 /// </param>
+/// <param name="Kind">Whether it is a camera or a police speed trap.</param>
 internal sealed record MapCamera(
     ulong Uid,
     double X,
@@ -30,23 +31,34 @@ internal sealed record MapCamera(
     string Unit,
     string Model,
     string Sector,
-    double? Facing);
+    double? Facing,
+    CameraKind Kind = CameraKind.Camera);
 
 /// <summary>
-/// Finds placed cameras in the map sectors. Sign items (type 36) are found by the model token of each
-/// camera's sign unit, validating the fixed item header in front of it
-/// (<c>u32 type | u64 uid | f32 kdop_min[5] | f32 kdop_max[5] | u32 flags | u8 view_distance | u64 model | u64 node</c>);
-/// the node record (<c>u64 uid | i32 position×256 [3] | f32 quaternion w,x,y,z</c>) gives the node's
-/// heading, which the model's camera locators turn into the facing.
+/// Finds placed cameras and traps in the map sectors. Sign items (type 36, ETS2 cameras) and model items
+/// (type 5, ATS cameras and traps) are found by the model token of each model's unit, validating the
+/// fixed item header in front of it
+/// (<c>u32 type | u64 uid | f32 kdop_min[5] | f32 kdop_max[5] | u32 flags | u8 view_distance | u64 model</c>);
+/// a sign item's node follows the model token (<c>u64 model | u64 node</c>), a model item's follows its
+/// variant, look and extra parts (<c>u64 model | u64 variant | u64 look | u32 parts | u64 part[parts] | u64 node</c>,
+/// ATS 1.61.3.1). The node record
+/// (<c>u64 uid | i32 position×256 [3] | f32 quaternion w,x,y,z</c>) gives the node's heading, which the
+/// model's camera locators turn into the facing.
 /// Port of the DriveDogs Radar <c>tools/extract_camera_db.py</c>, plus the facing (map format 907, 1.61).
 /// </summary>
 internal static class MapCameras
 {
-    private const uint SignItemType = 36;
+    /// <summary>The map item type of a sign, which ETS2 uses for cameras.</summary>
+    internal const uint SignItemType = 36;
+
+    /// <summary>The map item type of a model, which ATS uses for cameras and traps.</summary>
+    internal const uint ModelItemType = 5;
+
     private const int TypeOffset = -57;
     private const int UidOffset = -53;
     private const int BoundsOffset = -45;
-    private const int NodeOffset = 8;
+    private const int SignNodeOffset = 8;
+    private const int ModelPartsOffset = 24;
 
     /// <summary>How close, in metres, a node record must be to the camera to be its node (the uid also appears as the item's own reference).</summary>
     private const double NodeMatchMetres = 30;
@@ -55,14 +67,14 @@ internal static class MapCameras
     /// Scans every sector of a map folder.
     /// </summary>
     /// <param name="mapDirectory">The map folder, for example <c>map/europe</c>.</param>
-    /// <param name="models">The camera models to look for.</param>
-    /// <returns>The placed cameras, sorted by sector then uid.</returns>
+    /// <param name="models">The camera and trap models to look for.</param>
+    /// <returns>The placed cameras and traps, sorted by sector then uid.</returns>
     public static IReadOnlyList<MapCamera> Find(
         string mapDirectory,
         IReadOnlyList<CameraModel> models)
     {
         var tokens = models
-            .SelectMany(m => m.SignUnits.Select(u => (Token: ScsToken.Encode(u[(u.IndexOf('.') + 1)..]), Unit: u, Model: m)))
+            .SelectMany(m => m.Units.Select(u => (Token: ScsToken.Encode(u.Name[(u.Name.IndexOf('.') + 1)..]), Unit: u, Model: m)))
             .ToList();
         var cameras = new Dictionary<ulong, MapCamera>();
         var files = Directory.GetFiles(mapDirectory)
@@ -80,7 +92,7 @@ internal static class MapCameras
                 foreach (var at in Occurrences(data, token))
                 {
                     if (at + TypeOffset < 0
-                        || BinaryPrimitives.ReadUInt32LittleEndian(data.AsSpan(at + TypeOffset)) != SignItemType)
+                        || BinaryPrimitives.ReadUInt32LittleEndian(data.AsSpan(at + TypeOffset)) != unit.ItemType)
                     {
                         continue;
                     }
@@ -92,11 +104,13 @@ internal static class MapCameras
                     }
 
                     var (x, y, z) = BoundsCentre(data.AsSpan(at + BoundsOffset));
-                    var node = BinaryPrimitives.ReadUInt64LittleEndian(data.AsSpan(at + NodeOffset));
-                    var nodeFacing = NodeFacing(SectorBytes(sectorBytes, mapDirectory, sector), node, x, z);
+                    var nodeAt = at + NodeOffset(data, at, unit.ItemType);
+                    var nodeFacing = nodeAt >= at && nodeAt + 8 <= data.Length
+                        ? NodeFacing(SectorBytes(sectorBytes, mapDirectory, sector), BinaryPrimitives.ReadUInt64LittleEndian(data.AsSpan(nodeAt)), x, z)
+                        : null;
                     var modelName = model.Model[(model.Model.LastIndexOf('/') + 1)..];
                     var facing = Facing(nodeFacing, model.Direction);
-                    cameras[uid] = new MapCamera(uid, Math.Round(x, 2), Math.Round(y, 2), Math.Round(z, 2), unit, modelName, sector, facing);
+                    cameras[uid] = new MapCamera(uid, Math.Round(x, 2), Math.Round(y, 2), Math.Round(z, 2), unit.Name, modelName, sector, facing, model.Kind);
                 }
             }
         }
@@ -108,9 +122,30 @@ internal static class MapCameras
     }
 
     /// <summary>
+    /// Where an item's node uid is, relative to its model token.
+    /// </summary>
+    /// <param name="data">The sector bytes.</param>
+    /// <param name="at">The offset of the model token.</param>
+    /// <param name="itemType">The item type.</param>
+    /// <returns>The offset of the node uid from the model token.</returns>
+    internal static int NodeOffset(
+        byte[] data,
+        int at,
+        uint itemType)
+    {
+        if (itemType == SignItemType)
+        {
+            return SignNodeOffset;
+        }
+
+        var parts = BinaryPrimitives.ReadInt32LittleEndian(data.AsSpan(at + ModelPartsOffset));
+        return ModelPartsOffset + 4 + (8 * parts);
+    }
+
+    /// <summary>
     /// The travel direction a placed camera enforces.
     /// </summary>
-    /// <param name="nodeFacing">The compass heading of the sign node's forward axis, if found.</param>
+    /// <param name="nodeFacing">The compass heading of the item node's forward axis, if found.</param>
     /// <param name="direction">The model's direction relative to that axis; <see langword="null"/> for a two-way camera.</param>
     /// <returns>The compass heading, 0..360; <see langword="null"/> when either is unknown.</returns>
     internal static double? Facing(

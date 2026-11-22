@@ -6,10 +6,13 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using DevDogs.TruckSimulator.Core;
 using DevDogs.TruckSimulator.Core.Diagnostics;
+using DevDogs.TruckSimulator.Core.GameConfig;
 using DevDogs.TruckSimulator.Core.Localisation;
 using DevDogs.TruckSimulator.Core.Radar;
 using DevDogs.TruckSimulator.Core.Recording;
 using DevDogs.TruckSimulator.Core.Sections;
+using DevDogs.TruckSimulator.Core.Telemetry;
+using DevDogs.TruckSimulator.GameConfig;
 using DevDogs.TruckSimulator.Telemetry;
 using DevDogs.TruckSimulator.UI;
 using GameReaderCommon;
@@ -31,6 +34,7 @@ public class DDTruckPlugin : IPlugin, IDataPlugin, IWPFSettingsV2
 
     private readonly HashSet<string> _failingSections = [];
     private readonly LiveTelemetryMonitor _monitor = new();
+    private readonly ProfileConfigWatcher _profileConfig = new();
 
     private SimHubSectionBridge _bridge = null!; // assigned in Init, which SimHub calls before any other member
     private DashboardSection _dashboard = null!; // assigned in Init
@@ -86,7 +90,7 @@ public class DDTruckPlugin : IPlugin, IDataPlugin, IWPFSettingsV2
             new EngineSection(),
             new JobSection(Settings),
             new JobStatusSection(),
-            new LightsSection(),
+            new LightsSection(Settings, () => _profileConfig.Value),
             new LocalisationSection(EmptyCityNameSource.Instance),
             new NavigationSection(),
             new RadarSection(Settings, CameraDatabase.LoadEmbedded),
@@ -113,6 +117,7 @@ public class DDTruckPlugin : IPlugin, IDataPlugin, IWPFSettingsV2
         ref GameData data)
     {
         _dashboard.Update(_bridge);
+        _profileConfig.SetGame(data.GameRunning ? TruckGames.FromSimHubName(data.GameName) : TruckGame.Unknown);
 
         var hasTelemetry = TelemetryReader.TryRead(ref data, out var telemetry);
         if (_monitor.Enabled)
@@ -146,12 +151,13 @@ public class DDTruckPlugin : IPlugin, IDataPlugin, IWPFSettingsV2
     }
 
     /// <summary>
-    /// Finishes any recording and saves settings when SimHub shuts down.
+    /// Finishes any recording, stops watching the game profile and saves settings when SimHub shuts down.
     /// </summary>
     /// <param name="pluginManager">The SimHub plugin manager.</param>
     public void End(PluginManager pluginManager)
     {
         _recording.Recorder.Dispose();
+        _profileConfig.Dispose();
         this.SaveCommonSettings(SettingsKey, Settings);
     }
 

@@ -1,3 +1,5 @@
+using DevDogs.TruckSimulator.Core.GameConfig;
+
 namespace DevDogs.TruckSimulator.Core;
 
 /// <summary>
@@ -29,4 +31,10 @@ public sealed class PluginSettings
     /// direction (the ones that can fine the driver).
     /// </summary>
     public bool RadarFacingFilter { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets where <c>Lights.AutoHighBeam</c> comes from: the game's option in the loaded profile
+    /// (default), or a fixed value for when the plugin can't find the profile or picks the wrong one.
+    /// </summary>
+    public AutoHighBeamMode AutoHighBeam { get; set; } = AutoHighBeamMode.AutoDetect;
 }

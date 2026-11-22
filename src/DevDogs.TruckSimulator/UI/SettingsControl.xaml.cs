@@ -10,6 +10,7 @@ using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Threading;
 using DevDogs.TruckSimulator.Core.Diagnostics;
+using DevDogs.TruckSimulator.Core.GameConfig;
 using DevDogs.TruckSimulator.Telemetry;
 
 namespace DevDogs.TruckSimulator.UI;
@@ -21,6 +22,14 @@ namespace DevDogs.TruckSimulator.UI;
 /// </summary>
 public partial class SettingsControl : UserControl
 {
+    /// <summary>The choices of the "Automatic high beams" setting, in display order.</summary>
+    private static readonly SettingOption<AutoHighBeamMode>[] AutoHighBeamOptions =
+    [
+        new(AutoHighBeamMode.AutoDetect, "Auto-detect"),
+        new(AutoHighBeamMode.AlwaysOn, "Always on"),
+        new(AutoHighBeamMode.AlwaysOff, "Always off"),
+    ];
+
     private readonly SettingsPageModel _model;
     private readonly DispatcherTimer _timer = new() { Interval = TimeSpan.FromMilliseconds(200) };
     private readonly ObservableCollection<LiveRow> _inputs = [];
@@ -40,6 +49,7 @@ public partial class SettingsControl : UserControl
         DataContext = model;
         VersionText.Text = $"Version {model.Version}";
 
+        AutoHighBeamBox.ItemsSource = AutoHighBeamOptions;
         InputsGrid.ItemsSource = _inputs;
         OutputsGrid.ItemsSource = _outputs;
         CollectionViewSource.GetDefaultView(_inputs).Filter = MatchesFilter;

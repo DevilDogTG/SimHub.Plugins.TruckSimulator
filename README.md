@@ -21,8 +21,9 @@ Requires SimHub 9.x on Windows.
 
 Open **Truck Simulator** in SimHub's left menu:
 
-- **Settings:** over-speed margin, wear warning level, metric or imperial dashboard units, and the
-  speed-camera radar's alert distance, cone angle and "only cameras facing my direction" filter.
+- **Settings:** over-speed margin, wear warning level, metric or imperial dashboard units, automatic
+  high beams (Auto-detect / Always on / Always off), and the speed-camera radar's alert distance, cone
+  angle and "only cameras facing my direction" filter.
 - **Live telemetry:** switch on to see what this plugin reads from the game (each value with the SimHub
   property it comes from), every value it publishes, and its recent events. Only this plugin's data,
   so its values can't be confused with SimHub's own. Off by default; refreshed only while the tab is open.
@@ -60,6 +61,13 @@ Every name below is prefixed with `DDTruckPlugin.`, for example `DDTruckPlugin.J
 |---|---|---|
 | `Engine.Starting` | bool | The engine is cranking (turning but not yet running). |
 | `Lights.HazardWarningOn` | bool | Hazard lights are on (both blinkers), held steady between flashes. |
+| `Lights.AutoHighBeam` | bool | The game's "Automatic high beams" option is on, so the game may dim the high beams while the switch stays on. |
+
+`Lights.AutoHighBeam` comes from the loaded profile's `config.cfg` (`g_automatic_high_beams`). The plugin
+learns the profile from the game's `game.log.txt` and re-reads the file whenever the game writes it, which
+it does as soon as Options is applied. It is `false` when the game is not running or the profile can't be
+found. If the plugin picks the wrong profile, set **Automatic high beams** on the Settings tab to
+**Always on** or **Always off**.
 
 ### Job and navigation
 | Property | Type | Meaning |

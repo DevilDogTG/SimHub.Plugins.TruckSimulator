@@ -25,6 +25,16 @@ internal sealed record SettingsPageModel(
     string Version);
 
 /// <summary>
+/// One choice of a setting shown in a drop-down.
+/// </summary>
+/// <typeparam name="T">The setting's value type.</typeparam>
+/// <param name="Value">The value stored in the settings.</param>
+/// <param name="Label">The text shown.</param>
+internal sealed record SettingOption<T>(
+    T Value,
+    string Label);
+
+/// <summary>
 /// One row of the live telemetry tab. Rows are created once per name and updated in place, so the
 /// grids keep their scroll position and selection while values change.
 /// </summary>

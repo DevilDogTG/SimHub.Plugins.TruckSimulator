@@ -2,6 +2,17 @@
 
 All notable changes to this project. Versions follow [semantic versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+- `Lights.AutoHighBeam`: the game's "Automatic high beams" option is on, so a dashboard can show that
+  the game may dim the high beams while the switch (`LightsValues.BeamHigh`) stays on. Read from the
+  loaded profile's `config.cfg` (Steam Cloud or local profiles; the profile comes from `game.log.txt`) and
+  updated as soon as the option is applied in game. `false` when the game is not running or the profile
+  can't be found.
+- Setting "Automatic high beams": Auto-detect (default), Always on or Always off, for when the plugin
+  can't find the profile or picks the wrong one.
+
 ## [1.1.0] - 2026-11-07
 
 ### Added

@@ -23,6 +23,7 @@
                 <RowDefinition Height="40" />
                 <RowDefinition Height="40" />
                 <RowDefinition Height="40" />
+                <RowDefinition Height="40" />
                 <RowDefinition Height="48" />
                 <RowDefinition Height="40" />
                 <RowDefinition Height="40" />
@@ -49,28 +50,34 @@
               <CheckBox Grid.Row="2" Grid.Column="1" VerticalAlignment="Center"
                         IsChecked="{Binding Settings.DashUnitMetric, Mode=TwoWay}" />
 
-              <TextBlock Grid.Row="3" Grid.ColumnSpan="3" VerticalAlignment="Bottom" Margin="0,0,0,6"
+              <TextBlock Grid.Row="3" VerticalAlignment="Center" Text="Automatic high beams"
+                         ToolTip="Sets Lights.AutoHighBeam. Auto-detect reads the game's &quot;Automatic high beams&quot; option from the loaded profile. Pick Always on or Always off if the plugin can't find your profile or picks the wrong one." />
+              <ComboBox x:Name="AutoHighBeamBox" Grid.Row="3" Grid.Column="1" VerticalAlignment="Center"
+                        SelectedValuePath="Value" DisplayMemberPath="Label"
+                        SelectedValue="{Binding Settings.AutoHighBeam, Mode=TwoWay}" />
+
+              <TextBlock Grid.Row="4" Grid.ColumnSpan="3" VerticalAlignment="Bottom" Margin="0,0,0,6"
                          Text="SPEED-CAMERA RADAR (ETS2)" FontWeight="Bold" />
 
-              <TextBlock Grid.Row="4" VerticalAlignment="Center" Text="Alert distance (m)"
+              <TextBlock Grid.Row="5" VerticalAlignment="Center" Text="Alert distance (m)"
                          ToolTip="How far ahead a speed camera starts Radar.CameraAhead. The alert holds for 50 m more." />
-              <Slider Grid.Row="4" Grid.Column="1" VerticalAlignment="Center" Minimum="100" Maximum="1000"
+              <Slider Grid.Row="5" Grid.Column="1" VerticalAlignment="Center" Minimum="100" Maximum="1000"
                       IsSnapToTickEnabled="True" TickFrequency="10"
                       Value="{Binding Settings.RadarAlertDistance, Mode=TwoWay}" />
-              <TextBlock Grid.Row="4" Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Right"
+              <TextBlock Grid.Row="5" Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Right"
                          Text="{Binding Settings.RadarAlertDistance}" />
 
-              <TextBlock Grid.Row="5" VerticalAlignment="Center" Text="Cone angle (degrees)"
+              <TextBlock Grid.Row="6" VerticalAlignment="Center" Text="Cone angle (degrees)"
                          ToolTip="How far to either side of the travel direction a camera still counts as ahead. Wider catches bends but also parallel roads." />
-              <Slider Grid.Row="5" Grid.Column="1" VerticalAlignment="Center" Minimum="5" Maximum="60"
+              <Slider Grid.Row="6" Grid.Column="1" VerticalAlignment="Center" Minimum="5" Maximum="60"
                       IsSnapToTickEnabled="True" TickFrequency="1"
                       Value="{Binding Settings.RadarConeAngle, Mode=TwoWay}" />
-              <TextBlock Grid.Row="5" Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Right"
+              <TextBlock Grid.Row="6" Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Right"
                          Text="{Binding Settings.RadarConeAngle}" />
 
-              <TextBlock Grid.Row="6" VerticalAlignment="Center" Text="Only cameras facing my direction"
+              <TextBlock Grid.Row="7" VerticalAlignment="Center" Text="Only cameras facing my direction"
                          ToolTip="Cameras fine only traffic travelling the way they face. Off: alert for every camera ahead, including the opposite carriageway." />
-              <CheckBox Grid.Row="6" Grid.Column="1" VerticalAlignment="Center"
+              <CheckBox Grid.Row="7" Grid.Column="1" VerticalAlignment="Center"
                         IsChecked="{Binding Settings.RadarFacingFilter, Mode=TwoWay}" />
             </Grid>
 

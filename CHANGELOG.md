@@ -13,6 +13,10 @@ All notable changes to this project. Versions follow [semantic versioning](https
 - Setting "Automatic high beams": Auto-detect (default), Always on or Always off, for when the plugin
   can't find the profile or picks the wrong one.
 
+### Changed
+- SimHub shows the plugin's author as DevilDogTG (was DevDogs), as in the other DevDogs plugins.
+  Property names and the plugin name are unchanged.
+
 ## [1.1.0] - 2026-11-07
 
 ### Added

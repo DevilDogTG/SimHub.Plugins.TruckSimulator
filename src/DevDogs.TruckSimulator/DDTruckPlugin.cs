@@ -26,7 +26,7 @@ namespace DevDogs.TruckSimulator;
 /// </summary>
 [PluginName("DevDogs Truck Simulator")]
 [PluginDescription("Additional properties, events and actions for Euro Truck Simulator 2 and American Truck Simulator.")]
-[PluginAuthor("DevDogs")]
+[PluginAuthor("DevilDogTG")]
 public class DDTruckPlugin : IPlugin, IDataPlugin, IWPFSettingsV2
 {
     /// <summary>The key SimHub stores this plugin's settings under.</summary>

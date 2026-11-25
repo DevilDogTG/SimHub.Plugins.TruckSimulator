@@ -2,7 +2,7 @@
 
 All notable changes to this project. Versions follow [semantic versioning](https://semver.org/).
 
-## [Unreleased]
+## [1.2.0] - 2026-11-25
 
 ### Added
 - `Lights.AutoHighBeam`: the game's "Automatic high beams" option is on, so a dashboard can show that

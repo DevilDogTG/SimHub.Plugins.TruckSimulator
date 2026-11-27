@@ -2,6 +2,13 @@
 
 All notable changes to this project. Versions follow [semantic versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+- Add-on tabs: other DevDogs plugins can show their settings page as a tab on this plugin's page (after
+  Recording), for example Navigation Dash 1.3.0. They register through an AppDomain slot, so neither plugin needs
+  the other's DLL (docs/adr/ADR-0007).
+
 ## [1.2.0] - 2026-11-25
 
 ### Added

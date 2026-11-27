@@ -2,7 +2,7 @@
 
 All notable changes to this project. Versions follow [semantic versioning](https://semver.org/).
 
-## [Unreleased]
+## [1.3.0] - 2026-11-27
 
 ### Added
 - Add-on tabs: other DevDogs plugins can show their settings page as a tab on this plugin's page (after

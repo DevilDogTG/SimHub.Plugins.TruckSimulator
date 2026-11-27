@@ -29,6 +29,10 @@ Open **Truck Simulator** in SimHub's left menu:
   so its values can't be confused with SimHub's own. Off by default; refreshed only while the tab is open.
 - **Recording:** records the game values this plugin reads to a file, to replay real drives in tests
   (see [Telemetry recording](#telemetry-recording)).
+- **Add-on tabs:** other DevDogs plugins can show their settings here as a tab of their own, for example
+  **Navigation Dash** from [DevDogs.TruckSimulator.NavigationDash](https://github.com/DevilDogTG/SimHub.Plugins.TruckSimulator.NavigationDash)
+  1.3.0 or newer. Their own SimHub page stays; turn off its *Show in left main menu* switch under SimHub's
+  **Add/remove features** if you only want the tab.
 
 ## Properties
 

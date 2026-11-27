@@ -37,6 +37,8 @@ public partial class SettingsControl : UserControl
     private readonly Dictionary<string, LiveRow> _inputsByName = new(StringComparer.Ordinal);
     private readonly Dictionary<string, LiveRow> _outputsByName = new(StringComparer.Ordinal);
     private int _recordingStatusCountdown;
+    private readonly AddOnTabs _addOns;
+    private int _addOnCountdown;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="SettingsControl"/> class.
@@ -55,6 +57,7 @@ public partial class SettingsControl : UserControl
         CollectionViewSource.GetDefaultView(_inputs).Filter = MatchesFilter;
         CollectionViewSource.GetDefaultView(_outputs).Filter = MatchesFilter;
 
+        _addOns = new AddOnTabs(Tabs);
         _timer.Tick += (_, _) => OnTimer();
     }
 
@@ -68,6 +71,7 @@ public partial class SettingsControl : UserControl
         RoutedEventArgs e)
     {
         RefreshRecordingStatus();
+        _addOns.Sync();
         _timer.Start();
     }
 
@@ -99,6 +103,12 @@ public partial class SettingsControl : UserControl
         {
             _recordingStatusCountdown = 2;
             RefreshRecordingStatus();
+        }
+
+        if (--_addOnCountdown <= 0)
+        {
+            _addOnCountdown = 10; // every 2 s: an add-on can register after the page was built
+            _addOns.Sync();
         }
     }
 

@@ -9,6 +9,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Threading;
+using DevDogs.TruckSimulator.Core.AddOns;
 using DevDogs.TruckSimulator.Core.Diagnostics;
 using DevDogs.TruckSimulator.Core.GameConfig;
 using DevDogs.TruckSimulator.Telemetry;
@@ -49,7 +50,7 @@ public partial class SettingsControl : UserControl
         InitializeComponent();
         _model = model;
         DataContext = model;
-        VersionText.Text = $"Version {model.Version}";
+        VersionText.Text = AddOnVersions.Line(model.Version, []);
 
         AutoHighBeamBox.ItemsSource = AutoHighBeamOptions;
         InputsGrid.ItemsSource = _inputs;
@@ -71,7 +72,7 @@ public partial class SettingsControl : UserControl
         RoutedEventArgs e)
     {
         RefreshRecordingStatus();
-        _addOns.Sync();
+        SyncAddOns();
         _timer.Start();
     }
 
@@ -108,7 +109,19 @@ public partial class SettingsControl : UserControl
         if (--_addOnCountdown <= 0)
         {
             _addOnCountdown = 10; // every 2 s: an add-on can register after the page was built
-            _addOns.Sync();
+            SyncAddOns();
+        }
+    }
+
+    /// <summary>
+    /// Brings the add-on tabs in step with the slot and names the add-ons, with their versions, on the version line.
+    /// </summary>
+    private void SyncAddOns()
+    {
+        var line = AddOnVersions.Line(_model.Version, _addOns.Sync());
+        if (VersionText.Text != line)
+        {
+            VersionText.Text = line;
         }
     }
 

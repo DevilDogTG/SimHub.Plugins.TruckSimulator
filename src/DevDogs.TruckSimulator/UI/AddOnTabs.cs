@@ -29,7 +29,8 @@ internal sealed class AddOnTabs
     /// Adds a tab for each new add-on, rebuilds the tab of an add-on that registered again (a new entry object) and
     /// removes the tabs of add-ons that left. Runs on the page's UI thread.
     /// </summary>
-    public void Sync()
+    /// <returns>The add-ons read from the slot, ordered by id.</returns>
+    public IReadOnlyList<AddOn> Sync()
     {
         var addOns = AddOnSlot.Read();
         var ids = new HashSet<string>(addOns.Select(a => a.Id), StringComparer.Ordinal);
@@ -64,6 +65,8 @@ internal sealed class AddOnTabs
             _tabs.Items.Add(added);
             _shown[addOn.Id] = (added, addOn.Entry);
         }
+
+        return addOns;
     }
 
     /// <summary>

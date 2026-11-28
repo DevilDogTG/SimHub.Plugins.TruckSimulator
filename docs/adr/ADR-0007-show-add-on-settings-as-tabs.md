@@ -50,6 +50,12 @@ Option C.
   tab. An exception from `createSettings` shows as a message in that tab.
 - Reading the slot is in Core (`AddOns/AddOnSlot`, unit-tested); the tabs are in the plugin (`UI/AddOnTabs`).
 - A breaking change to the entry needs a new slot name (`...AddOns.v2`), read next to v1 for a while.
+- **Version line** (added 2026-11-28, 1.4.0): the line under the page's title names each add-on after this plugin's
+  version, for example `Version 1.4.0 · Navigation Dash 1.5.1`, refreshed with the tabs. Entries whose ids share the
+  part before the first `.` are one add-on with several tabs (NavigationDash's `navigationdash` and
+  `navigationdash.reports`): it is named once, by the first entry's title (ordinal id order) and the first `version`
+  in the group. An add-on that sends no `version` gets a tab but is not named on the line. The entry is unchanged; an
+  add-on with several tabs gives them ids under one root (Core `AddOns/AddOnVersions`, unit-tested).
 
 ## Consequences
 **Easier:** any DevDogs plugin can show its page here with a few lines, in any release order: without a host it keeps

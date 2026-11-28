@@ -2,6 +2,13 @@
 
 All notable changes to this project. Versions follow [semantic versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+- The version line under the page's title also names each add-on and its version, for example
+  `Version 1.4.0 · Navigation Dash 1.5.1`, so the page shows which add-on versions are loaded. An add-on with
+  several tabs (Navigation Dash's settings and Map reports) is named once (docs/adr/ADR-0007).
+
 ## [1.3.0] - 2026-11-27
 
 ### Added

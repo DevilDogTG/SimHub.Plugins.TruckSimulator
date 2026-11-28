@@ -32,7 +32,8 @@ Open **Truck Simulator** in SimHub's left menu:
 - **Add-on tabs:** other DevDogs plugins can show their settings here as a tab of their own, for example
   **Navigation Dash** from [DevDogs.TruckSimulator.NavigationDash](https://github.com/DevilDogTG/SimHub.Plugins.TruckSimulator.NavigationDash)
   1.3.0 or newer. Their own SimHub page stays; turn off its *Show in left main menu* switch under SimHub's
-  **Add/remove features** if you only want the tab.
+  **Add/remove features** if you only want the tab. The version line under the page's title names each add-on
+  with its version, for example `Version 1.4.0 · Navigation Dash 1.5.1`.
 
 ## Properties
 

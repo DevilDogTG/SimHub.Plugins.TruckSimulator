@@ -2,7 +2,7 @@
 
 All notable changes to this project. Versions follow [semantic versioning](https://semver.org/).
 
-## [Unreleased]
+## [1.4.0] - 2026-11-28
 
 ### Added
 - The version line under the page's title also names each add-on and its version, for example
